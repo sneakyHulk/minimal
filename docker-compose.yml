@@ -1,0 +1,53 @@
+version: "3"
+services:
+  sub:
+    build:
+      context: .
+      dockerfile: ecal.Dockerfile
+    container_name: sub
+    volumes:
+      - .:/src:ro
+      - /etc/timezone:/etc/timezone:ro
+    command: sh -c "mkdir -p "build" && cd "build" && cmake -DCMAKE_BUILD_TYPE=Release ../src && cmake --build . --target minimal_sub  && ./minimal_sub"
+    stop_signal: SIGTERM
+    network_mode: host
+    ipc: host
+    pid: host
+  pub:
+    build:
+      context: .
+      dockerfile: ecal.Dockerfile
+    container_name: pub
+    volumes:
+      - .:/src:ro
+      - /etc/timezone:/etc/timezone:ro
+    command: sh -c "mkdir -p "build" && cd "build" && cmake -DCMAKE_BUILD_TYPE=Release ../src && cmake --build . --target minimal_pub && ./minimal_pub"
+    stop_signal: SIGTERM
+    network_mode: host
+    ipc: host
+    pid: host
+  python_sub:
+    build:
+      context: .
+      dockerfile: ecal.Dockerfile
+    container_name: python_sub
+    volumes:
+      - .:/src:ro
+      - /etc/timezone:/etc/timezone:ro
+    command: python3 -u /src/scripts/python_sub.py
+    network_mode: host
+    ipc: host
+    pid: host
+  sub2:
+    build:
+      context: .
+      dockerfile: ecal.Dockerfile
+    container_name: sub2
+    volumes:
+      - .:/src:ro
+      - /etc/timezone:/etc/timezone:ro
+    command: sh -c "mkdir -p "build" && cd "build" && cmake -DCMAKE_BUILD_TYPE=Release ../src && cmake --build . --target minimal_sub  && ./minimal_sub"
+    stop_signal: SIGTERM
+    network_mode: host
+    ipc: host
+    pid: host
