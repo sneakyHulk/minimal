@@ -16,7 +16,7 @@ RUN apt-get install -y cmake pkg-config g++ libprotobuf-dev protobuf-compiler \
 
 # Set network_enabled = true in ecal.ini.
 # You can omit this, if you only need local communication.
-RUN awk -F"=" '/^network_enabled/{$2="= true"}1' /etc/ecal/ecal.ini > /etc/ecal/ecal.tmp && \
+RUN awk -F"=" '/^network_enabled/{$2="= true"}1' /etc/ecal/ecal.ini | awk -F"=" '/^memfile_zero_copy/{$2="= 1"}1' > /etc/ecal/ecal.tmp && \
 	rm /etc/ecal/ecal.ini && \
 	mv /etc/ecal/ecal.tmp /etc/ecal/ecal.ini
 
