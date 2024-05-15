@@ -7,16 +7,9 @@
 #include <thread>
 
 #include "common_output.h"
+#include "eCAL_RAII.h"
+#include "signal_handler.h"
 #include "timestamp.h"
-
-namespace {
-	volatile std::sig_atomic_t gSignalStatus;
-}
-
-void signal_handler(int signal) {
-	common::println("Got SIGINT/SIGTERM! Will finalize eCAL.");
-	gSignalStatus = signal;
-}
 
 void OnTimestamp(Timestamp const& msg) {
 	std::chrono::nanoseconds const just_now_ns(msg.ns);
@@ -33,17 +26,14 @@ void OnTimestamp(Timestamp const& msg) {
 }
 
 int main(int argc, char** argv) {
-	eCAL::Initialize(argc, argv, "sub");
-	std::signal(SIGTERM, signal_handler);
-	std::signal(SIGINT, signal_handler);
+	eCAL_RAII ecal_raii(argc, argv);
+	signal_handler();
 
 	eCAL::messagepack::CSubscriber<Timestamp> timestamp_subscriber("timestamp");
 	timestamp_subscriber.AddReceiveCallback(std::bind(OnTimestamp, std::placeholders::_2));
 
-	while (!gSignalStatus && eCAL::Ok())
+	while (!signal_handler::gSignalStatus && eCAL::Ok())
 		;
-
-	eCAL::Finalize();
 
 	return 0;
 }

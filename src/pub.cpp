@@ -2,35 +2,26 @@
 #include <ecal/msg/messagepack/publisher.h>
 
 #include <chrono>
-#include <csignal>
 #include <iostream>
 #include <random>
 #include <thread>
 
 #include "common_output.h"
+#include "eCAL_RAII.h"
+#include "signal_handler.h"
 #include "timestamp.h"
-
-namespace {
-	volatile std::sig_atomic_t gSignalStatus;
-}
-
-void signal_handler(int signal) {
-	common::println("Got SIGINT/SIGTERM! Will finalize eCAL.");
-	gSignalStatus = signal;
-}
 
 std::random_device rd;
 std::mt19937 gen(rd());
 std::uniform_int_distribution<> distrib(1, 6);
 
 int main(int argc, char **argv) {
-	eCAL::Initialize(argc, argv, "pub");
-	std::signal(SIGTERM, signal_handler);
-	std::signal(SIGINT, signal_handler);
+	eCAL_RAII ecal_raii(argc, argv);
+	signal_handler();
 
 	eCAL::messagepack::CPublisher<Timestamp> timestamp_publisher("timestamp");
 
-	while (!gSignalStatus && eCAL::Ok()) {
+	while (!signal_handler::gSignalStatus && eCAL::Ok()) {
 		auto const now = std::chrono::system_clock::now();
 		auto const now_ns = std::chrono::time_point_cast<std::chrono::nanoseconds>(now);
 
@@ -43,8 +34,6 @@ int main(int argc, char **argv) {
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(500));
 	}
-
-	eCAL::Finalize();
 
 	return 0;
 }
