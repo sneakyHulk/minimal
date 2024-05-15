@@ -1,0 +1,3 @@
+add_subdirectory(camera_simulator)
+add_subdirectory(yolo)
+add_subdirectory(pubsub)

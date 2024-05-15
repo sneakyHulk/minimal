@@ -1,53 +1,93 @@
-version: "3"
+version: '3.4'
 services:
-  sub:
+  ##### build images (cpu, cuda, rocm) #################################################################################
+  cpu-build:
     build:
       context: .
-      dockerfile: ecal.Dockerfile
+      dockerfile: Dockerfile
+      target: image
+      args:
+        src: cpu
+    image: minimal_cpu
+    profiles: [ "cpu", "pubsub", "yolo_cuda" ]
+  cuda-build:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: image
+      args:
+        src: cuda
+    image: minimal_cuda
+    profiles: [ "cuda", "yolo_cuda" ]
+  ##### run pubsub examples (uses cpu version) #########################################################################
+  sub:
+    image: minimal_cpu:latest
+    depends_on:
+      - cpu-build
     container_name: sub
     volumes:
       - .:/src:ro
       - /etc/timezone:/etc/timezone:ro
-    command: sh -c "mkdir -p "build" && cd "build" && cmake -DCMAKE_BUILD_TYPE=Release ../src && cmake --build . --target minimal_sub  && ./minimal_sub"
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target sub  && src/pubsub/sub"
     stop_signal: SIGTERM
     network_mode: host
     ipc: host
     pid: host
+    profiles: [ "pubsub" ]
   pub:
-    build:
-      context: .
-      dockerfile: ecal.Dockerfile
+    image: minimal_cpu:latest
+    depends_on:
+      - cpu-build
     container_name: pub
     volumes:
       - .:/src:ro
       - /etc/timezone:/etc/timezone:ro
-    command: sh -c "mkdir -p "build" && cd "build" && cmake -DCMAKE_BUILD_TYPE=Release ../src && cmake --build . --target minimal_pub && ./minimal_pub"
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target pub  && src/pubsub/pub"
     stop_signal: SIGTERM
     network_mode: host
     ipc: host
     pid: host
+    profiles: [ "pubsub" ]
   python_sub:
-    build:
-      context: .
-      dockerfile: ecal.Dockerfile
+    image: minimal_cpu:latest
+    depends_on:
+      - cpu-build
     container_name: python_sub
     volumes:
       - .:/src:ro
       - /etc/timezone:/etc/timezone:ro
-    command: python3 -u /src/scripts/python_sub.py
-    network_mode: host
-    ipc: host
-    pid: host
-  sub2:
-    build:
-      context: .
-      dockerfile: ecal.Dockerfile
-    container_name: sub2
-    volumes:
-      - .:/src:ro
-      - /etc/timezone:/etc/timezone:ro
-    command: sh -c "mkdir -p "build" && cd "build" && cmake -DCMAKE_BUILD_TYPE=Release ../src && cmake --build . --target minimal_sub  && ./minimal_sub"
+    command: python3 -u scripts/pubsub/python_sub.py
     stop_signal: SIGTERM
     network_mode: host
     ipc: host
     pid: host
+    profiles: [ "pubsub" ]
+  ##### run yolo detector ##############################################################################################
+  camera_simulator:
+    image: minimal_cpu:latest
+    depends_on:
+      - cpu-build
+    container_name: camera_simulator
+    volumes:
+      - .:/src:ro
+      - /etc/timezone:/etc/timezone:ro
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target camera_simulator  && src/camera_simulator/camera_simulator"
+    stop_signal: SIGTERM
+    network_mode: host
+    ipc: host
+    pid: host
+    profiles: [ "yolo_cuda" ]
+  yolo_cuda:
+    image: minimal_cuda:latest
+    depends_on:
+      - cuda-build
+    container_name: yolo_cuda
+    volumes:
+      - .:/src:ro
+      - /etc/timezone:/etc/timezone:ro
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target yolo_cuda && src/yolo/yolo_cuda"
+    stop_signal: SIGTERM
+    network_mode: host
+    ipc: host
+    pid: host
+    profiles: [ "yolo_cuda" ]
