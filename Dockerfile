@@ -53,6 +53,8 @@ RUN apt-get update \
     && apt-get clean autoclean \
     && rm -fr /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
 
+# flatbuffers-compiler-dev libflatbuffers-dev python3-flatbuffers
+
 # 1. Line enables networking
 # 2. Line enables zero copy mode
 # 3. Line enables multi-bufferfing mode, to relax the publisher needs to wait for the subscriber to release the buffer.

@@ -33,7 +33,14 @@ CPMAddPackage(
         VERSION 3.0
 )
 
+CPMAddPackage(
+        NAME flatbuffers
+        GITHUB_REPOSITORY google/flatbuffers
+        VERSION 24.3.25
+)
+
 ##### subdirectories ###################################################################################################
 
 add_subdirectory(lib)
 add_subdirectory(src)
+add_subdirectory(msg)

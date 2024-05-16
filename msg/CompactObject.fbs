@@ -10,7 +10,7 @@ struct CompactObject {
     extent:[float64:3];         // object dimensions
 }
 
-struct CompactObjectList {
+table CompactObjectList {
     timestamp:ulong;        // UTC timestamp since epoch in ns
     num_objects:ulong;      // number of objects
     object:[CompactObject]; // Vector of compact objects

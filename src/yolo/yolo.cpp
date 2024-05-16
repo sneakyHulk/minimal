@@ -1,8 +1,12 @@
+#include <Detection2D_generated.h>
+#include <Image_generated.h>
 #include <ecal/ecal.h>
+#include <ecal/msg/flatbuffers/publisher.h>
+#include <ecal/msg/flatbuffers/subscriber.h>
+#include <flatbuffers/flatbuffers.h>
 #include <torch/script.h>
 #include <torch/torch.h>
 
-#include <argparse/argparse.hpp>
 #include <filesystem>
 #include <iostream>
 #include <opencv2/core.hpp>
@@ -18,8 +22,6 @@
 
 using torch::indexing::None;
 using torch::indexing::Slice;
-
-argparse::ArgumentParser program;
 
 float generate_scale(cv::Mat& image, const std::vector<int>& target_size) {
 	int origin_w = image.cols;
@@ -198,21 +200,7 @@ torch::Tensor scale_boxes(const std::vector<int>& img1_shape, torch::Tensor& box
 	return boxes;
 }
 
-void OnImage(const struct eCAL::SReceiveCallbackData* data_) {}
-
 int main(int argc, char** argv) {
-	// get height and width of image from arguments
-	program.add_argument("--height").help("set height of simulated images").default_value(1200);
-	program.add_argument("--width").help("set width of simulated images").default_value(1920);
-
-	try {
-		program.parse_args(argc, argv);
-	} catch (const std::exception& err) {
-		std::cerr << err.what() << std::endl;
-		std::cerr << program;
-		std::exit(1);
-	}
-
 	// init libtorch and yolo model
 	torch::Device device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU);
 	common::println(torch::cuda::is_available() ? "GPU mode inference" : "CPU mode inference");
@@ -239,19 +227,24 @@ int main(int argc, char** argv) {
 #endif
 	signal_handler();
 
-	eCAL::CSubscriber image_subscriber("image");
+	eCAL::flatbuffers::CSubscriber<flatbuffers::FlatBufferBuilder> image_subscriber("image");
+	eCAL::flatbuffers::CPublisher<flatbuffers::FlatBufferBuilder> detection2d_list_publisher("detection2d_list");
+
+	std::uint64_t id = 0;
 
 	while (!signal_handler::gSignalStatus) {
-		std::string buf;
-		long long time;
-		auto const n_bytes = image_subscriber.ReceiveBuffer(buf, &time);
+		flatbuffers::FlatBufferBuilder msg;
+		auto const n_bytes = image_subscriber.Receive(msg);
 		if (n_bytes) {
-			cv::Mat image(program.get<int>("--height"), program.get<int>("--width"), CV_8UC3, buf.data());
+			auto image(GetImage(msg.GetBufferPointer()));
+			++id;
+
+			cv::Mat cv_image(image->height(), image->width(), CV_8UC3, (void*)image->mat()->data());
 
 			try {
 				// preprocess image
 				cv::Mat input_image;
-				letterbox(image, input_image, {640, 640});
+				letterbox(cv_image, input_image, {640, 640});
 
 				torch::Tensor image_tensor = torch::from_blob(input_image.data, {input_image.rows, input_image.cols, 3}, torch::kByte).to(device);
 				image_tensor = image_tensor.toType(torch::kFloat32).div(255);
@@ -265,31 +258,38 @@ int main(int argc, char** argv) {
 				// NMS
 				auto keep = non_max_suppression(output)[0];
 				auto boxes = keep.index({Slice(), Slice(None, 4)});
-				keep.index_put_({Slice(), Slice(None, 4)}, scale_boxes({input_image.rows, input_image.cols}, boxes, {image.rows, image.cols}));
+				keep.index_put_({Slice(), Slice(None, 4)}, scale_boxes({input_image.rows, input_image.cols}, boxes, {cv_image.rows, cv_image.cols}));
+
+				Detection2DListT detection2d_list;
+
+				auto num_objects = 0;
 
 				// paint the results
 				for (int i = 0; i < keep.size(0); i++) {
 					int cls = keep[i][5].item().toInt();
 					if (cls != 0 && cls != 1 && cls != 2 && cls != 3 && cls != 5 && cls != 7) continue;
 
-					int x1 = keep[i][0].item().toFloat();
-					int y1 = keep[i][1].item().toFloat();
-					int x2 = keep[i][2].item().toFloat();
-					int y2 = keep[i][3].item().toFloat();
-					float conf = keep[i][4].item().toFloat();
+					++num_objects;
 
-					std::cout << "Rect: [" << x1 << "," << y1 << "," << x2 << "," << y2 << "]  Conf: " << conf << "  Class: " << classes[cls] << std::endl;
+					BoundingBox2D_XYXY bbox(keep[i][0].item().toFloat(), keep[i][1].item().toFloat(), keep[i][2].item().toFloat(), keep[i][3].item().toFloat());
+					Detection2D detection(cls, keep[i][4].item().toFloat(), bbox);
 
-					cv::rectangle(image, cv::Point(x1, y1), cv::Point(x2, y2), cv::viz::Color::blue());
-					cv::putText(image, classes[cls], cv::Point(x1, y1), cv::FONT_HERSHEY_SIMPLEX, 1, cv::viz::Color::red());
+					detection2d_list.object.push_back(detection);
 				}
+
+				detection2d_list.num_objects = num_objects;
+				detection2d_list.timestamp = image->timestamp();
+
+				flatbuffers::FlatBufferBuilder builder;
+				builder.Finish(Detection2DList::Pack(builder, &detection2d_list));
+
+				detection2d_list_publisher.Send(builder, -1);
+
 			} catch (const c10::Error& e) {
 				common::println(e.msg());
 			}
 
-			common::println("Time taken = ", eCAL::Time::GetMicroSeconds() - time, " μs");
-			// cv::imshow("yolo", image);
-			// cv::waitKey(1);
+			// common::println("Time taken = ", (std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - image->timestamp()) / 1000000, " ms");
 		}
 	}
 

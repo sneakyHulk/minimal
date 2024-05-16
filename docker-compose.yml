@@ -79,7 +79,7 @@ services:
     volumes:
       - .:/src:ro
       - /etc/timezone:/etc/timezone:ro
-    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target camera_simulator  && src/camera_simulator/camera_simulator"
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target camera_simulator_flatbuffers -j 4 && src/camera_simulator/camera_simulator_flatbuffers"
     stop_signal: SIGTERM
     network_mode: host
     ipc: host
@@ -93,7 +93,7 @@ services:
     volumes:
       - .:/src:ro
       - /etc/timezone:/etc/timezone:ro
-    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target yolo_cuda && src/yolo/yolo"
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target yolo -j 8 && src/yolo/yolo"
     stop_signal: SIGTERM
     network_mode: host
     ipc: host
@@ -114,7 +114,7 @@ services:
       - seccomp:unconfined
     group_add:
       - video
-    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target yolo_cuda && src/yolo/yolo"
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target yolo -j 8 && src/yolo/yolo"
     stop_signal: SIGTERM
     network_mode: host
     ipc: host
@@ -128,9 +128,24 @@ services:
     volumes:
       - .:/src:ro
       - /etc/timezone:/etc/timezone:ro
-    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target yolo_cuda && src/yolo/yolo"
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target yolo -j 8 && src/yolo/yolo"
     stop_signal: SIGTERM
     network_mode: host
     ipc: host
     pid: host
     profiles: [ "yolo_cpu" ]
+  ##### run coordinate transform #######################################################################################
+  image_to_world:
+    image: minimal_cpu:latest
+    depends_on:
+      - cpu-build
+    container_name: image_to_world
+    volumes:
+      - .:/src:ro
+      - /etc/timezone:/etc/timezone:ro
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target image_to_world -j 4 && src/coordinate_transformation/image_to_world"
+    stop_signal: SIGTERM
+    network_mode: host
+    ipc: host
+    pid: host
+    profiles: [ "yolo_cuda", "yolo_rocm", "yolo_cpu" ]
