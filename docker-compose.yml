@@ -1,4 +1,3 @@
-version: '3.4'
 services:
   ##### build images (cpu, cuda, rocm) #################################################################################
   cpu-build:
@@ -9,7 +8,7 @@ services:
       args:
         src: cpu
     image: minimal_cpu
-    profiles: [ "cpu", "pubsub", "yolo_cuda" ]
+    profiles: [ "cpu", "pubsub", "yolo_cuda", "yolo_rocm", "yolo_cpu" ]
   cuda-build:
     build:
       context: .
@@ -19,6 +18,15 @@ services:
         src: cuda
     image: minimal_cuda
     profiles: [ "cuda", "yolo_cuda" ]
+  rocm-build:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: image
+      args:
+        src: rocm
+    image: minimal_rocm
+    profiles: [ "rocm", "yolo_rocm" ]
   ##### run pubsub examples (uses cpu version) #########################################################################
   sub:
     image: minimal_cpu:latest
@@ -76,7 +84,7 @@ services:
     network_mode: host
     ipc: host
     pid: host
-    profiles: [ "yolo_cuda" ]
+    profiles: [ "yolo_cuda", "yolo_rocm", "yolo_cpu" ]
   yolo_cuda:
     image: minimal_cuda:latest
     depends_on:
@@ -85,9 +93,44 @@ services:
     volumes:
       - .:/src:ro
       - /etc/timezone:/etc/timezone:ro
-    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target yolo_cuda && src/yolo/yolo_cuda"
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target yolo_cuda && src/yolo/yolo"
     stop_signal: SIGTERM
     network_mode: host
     ipc: host
     pid: host
     profiles: [ "yolo_cuda" ]
+  yolo_rocm:
+    image: minimal_rocm:latest
+    depends_on:
+      - rocm-build
+    container_name: yolo_rocm
+    volumes:
+      - .:/src:ro
+      - /etc/timezone:/etc/timezone:ro
+    devices:
+      - /dev/kfd
+      - /dev/dri
+    security_opt:
+      - seccomp:unconfined
+    group_add:
+      - video
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target yolo_cuda && src/yolo/yolo"
+    stop_signal: SIGTERM
+    network_mode: host
+    ipc: host
+    pid: host
+    profiles: [ "yolo_rocm" ]
+  yolo_cpu:
+    image: minimal_cpu:latest
+    depends_on:
+      - cpu-build
+    container_name: yolo_cpu
+    volumes:
+      - .:/src:ro
+      - /etc/timezone:/etc/timezone:ro
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target yolo_cuda && src/yolo/yolo"
+    stop_signal: SIGTERM
+    network_mode: host
+    ipc: host
+    pid: host
+    profiles: [ "yolo_cpu" ]

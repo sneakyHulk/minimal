@@ -232,7 +232,11 @@ int main(int argc, char** argv) {
 	}
 
 	// init eCAL
+#ifdef __cpp_lib_source_location
 	eCAL_RAII ecal_raii(argc, argv);
+#else
+	eCAL_RAII ecal_raii(argc, argv, std::filesystem::path(__FILE__).stem());
+#endif
 	signal_handler();
 
 	eCAL::CSubscriber image_subscriber("image");
