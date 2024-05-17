@@ -1,0 +1,3 @@
+[submodule "thirdparty/projection_library"]
+	path = thirdparty/projection_library
+	url = https://gitlab.lrz.de/providentiaplusplus/projection_library.git
