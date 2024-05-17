@@ -15,3 +15,5 @@ table CompactObjectList {
     num_objects:ulong;      // number of objects
     object:[CompactObject]; // Vector of compact objects
 }
+
+root_type CompactObjectList;

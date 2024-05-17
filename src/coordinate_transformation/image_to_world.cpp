@@ -7,6 +7,7 @@
 #include <string>
 #include <thread>
 
+#include "CompactObject_generated.h"
 #include "Detection2D_generated.h"
 [[maybe_unused]] std::ostream& operator<<(std::ostream& stream, BoundingBox2D_XYXY const& bbox) {
 	stream << '[' << bbox.left() << ", " << bbox.top() << ", " << bbox.right() << ", " << bbox.bottom() << ']';
@@ -23,6 +24,7 @@ int main(int argc, char** argv) {
 	signal_handler();
 
 	eCAL::flatbuffers::CSubscriber<flatbuffers::FlatBufferBuilder> detection2d_list_subscriber("detection2d_list");
+	eCAL::flatbuffers::CPublisher<flatbuffers::FlatBufferBuilder> object_list_publisher("object_list");
 
 	while (!signal_handler::gSignalStatus) {
 		flatbuffers::FlatBufferBuilder msg;
@@ -30,9 +32,12 @@ int main(int argc, char** argv) {
 		if (n_bytes) {
 			auto detection2d_list(GetDetection2DList(msg.GetBufferPointer()));
 
-			for (auto e : *detection2d_list->object()) common::println(e->bbox());
+			for (auto e : *detection2d_list->object()) {
+				std::array not_implemented{std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity()};
 
-
+				CompactObject object(0, e->object_class(), not_implemented, not_implemented, not_implemented, 0., 0., not_implemented, not_implemented);
+				common::println(e->bbox());
+			}
 
 			common::println("Time taken = ", (std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - detection2d_list->timestamp()) / 1000000, " ms");
 		}

@@ -39,6 +39,11 @@ CPMAddPackage(
         VERSION 24.3.25
 )
 
+CPMAddPackage(
+        NAME nlohmann_json
+        GITHUB_REPOSITORY nlohmann/json
+        VERSION 3.11.3)
+
 ##### subdirectories ###################################################################################################
 
 add_subdirectory(lib)
