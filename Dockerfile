@@ -49,6 +49,8 @@ RUN apt-get update \
        libopencv-dev \
        python3-opencv \
        unzip \
+       libeigen3-dev \
+       nlohmann-json3-dev \
     && apt-get -y autoremove \
     && apt-get clean autoclean \
     && rm -fr /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*

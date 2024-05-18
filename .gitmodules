@@ -1,3 +1,13 @@
 [submodule "thirdparty/projection_library"]
 	path = thirdparty/projection_library
 	url = https://gitlab.lrz.de/providentiaplusplus/projection_library.git
+[submodule "thirdparty/flatbuffers"]
+	path = thirdparty/flatbuffers
+	url = https://github.com/google/flatbuffers.git
+[submodule "thirdparty/common"]
+	path = thirdparty/common
+	url = https://github.com/sneakyHulk/common.git
+[submodule "thirdparty/argparse"]
+	path = thirdparty/argparse
+	url = https://github.com/p-ranav/argparse.git
+
