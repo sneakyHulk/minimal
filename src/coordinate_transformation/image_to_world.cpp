@@ -24,8 +24,8 @@
 #include "eCAL_RAII.h"
 #include "signal_handler.h"
 
-template <typename Scalar>
-inline static Eigen::Matrix<Scalar, -1, -1> toEigenMatrix(const std::vector<std::vector<Scalar>>& vectors) {
+template <std::size_t rows, std::size_t cols, typename Scalar>
+inline static Eigen::Matrix<Scalar, rows, cols> toEigenMatrix(const std::vector<std::vector<Scalar>>& vectors) {
 	Eigen::Matrix<Scalar, -1, -1> M(vectors.size(), vectors.front().size());
 	for (size_t i = 0; i < vectors.size(); i++)
 		for (size_t j = 0; j < vectors.front().size(); j++) M(i, j) = vectors[i][j];
@@ -41,15 +41,26 @@ inline static std::vector<std::vector<Scalar>> fromEigenMatrix(const Matrix& M) 
 	return m;
 }
 
-void image_to_world(std::map<std::string, nlohmann::json>& camera_config, std::string const& camera_name) {
+auto image_to_world(std::map<std::string, nlohmann::json>& camera_config, std::string const& camera_name, float x, float y, float height) {
 	std::vector<std::vector<float>> const projection_matrix_stl = camera_config[camera_name]["projections"][0]["projection_matrix"].template get<std::vector<std::vector<float>>>();
-	auto const projection_matrix = toEigenMatrix(projection_matrix_stl);
+	auto const projection_matrix = toEigenMatrix<3, 4>(projection_matrix_stl);
 
-	auto KR = projection_matrix(Eigen::all, Eigen::last - 1);
-	auto KR_inv = KR.inverse();
+	// auto KR = projection_matrix(Eigen::all, Eigen::last - 1);
+	auto KR = projection_matrix(Eigen::all, Eigen::seq(0, Eigen::last - 1));
+	auto image_coordinates = Eigen::Vector3f();
+	image_coordinates << x, y, 1.0;
 
-	auto tmp =
+	auto C = projection_matrix(Eigen::all, Eigen::last);
+	auto translation_camera = -KR.inverse() * C;
 
+	auto tmp1 = KR.inverse() * image_coordinates;
+	auto tmp2 = tmp1 * (height - translation_camera(2)) / tmp1(2);
+	auto tmp3 = tmp2 + translation_camera;
+
+	common::println(tmp3);
+
+	// must be double because of double in CompactObjectList :(
+	return std::array<double, 3>{tmp3(0), tmp3(1), height};
 }
 
 int main(int argc, char** argv) {
@@ -67,7 +78,7 @@ int main(int argc, char** argv) {
 		}
 	}
 
-	image_to_world(camera_config, "s110_w_cam_8");
+	// image_to_world(camera_config, "s110_w_cam_8", 0, 1200, 0);
 
 	eCAL::flatbuffers::CSubscriber<flatbuffers::FlatBufferBuilder> detection2d_list_subscriber("detection2d_list");
 	eCAL::flatbuffers::CPublisher<flatbuffers::FlatBufferBuilder> object_list_publisher("object_list");
@@ -81,10 +92,10 @@ int main(int argc, char** argv) {
 			for (auto e : *detection2d_list->object()) {
 				std::array not_implemented{std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity()};
 
-				 //(e->bbox().right() + e->bbox().left() / 2)
+				auto center_position = image_to_world(camera_config, detection2d_list->source()->str(), (e->bbox().left() + e->bbox().right()) / 2.f, (e->bbox().top() + e->bbox().bottom()) / 2.f, 0.f);
 
-				CompactObject object(0, e->object_class(), not_implemented, not_implemented, not_implemented, 0., 0., not_implemented, not_implemented);
-				common::println(e->bbox());
+				CompactObject object(0, e->object_class(), center_position, not_implemented, not_implemented, 0., 0., not_implemented, not_implemented);
+				common::println(center_position);
 			}
 
 			common::println("Time taken = ", (std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - detection2d_list->timestamp()) / 1000000, " ms");

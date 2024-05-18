@@ -11,12 +11,12 @@ struct Detection2D {
     bbox:BoundingBox2D_XYXY;
 }
 
-enum Source : int { s110_w_cam_8, s110_n_cam_8, s110_e_cam_8, s110_s_cam_8 }
+//enum Sensor : int { s110_w_cam_8, s110_n_cam_8, s110_e_cam_8, s110_s_cam_8 }
 
 table Detection2DList {
     timestamp:ulong;        // UTC timestamp since epoch in ns
     num_objects:uint;       // number of objects
-    src:Source;             // source of detections
+    source:string;          // source of detections
     object:[Detection2D];   // vector of detections
 }
 

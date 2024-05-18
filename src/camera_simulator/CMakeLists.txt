@@ -5,7 +5,6 @@ cmake_minimum_required(VERSION 3.22)
 project(camera_simulator)
 
 find_package(OpenCV REQUIRED)
-find_package(argparse REQUIRED)
 
 add_executable(${PROJECT_NAME} ${PROJECT_NAME}.cpp)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${OpenCV_INCLUDE_DIRS})
@@ -43,7 +42,6 @@ project(image_display)
 
 #find_package(eCAL REQUIRED)
 find_package(OpenCV REQUIRED)
-find_package(argparse REQUIRED)
 
 add_executable(${PROJECT_NAME} ${PROJECT_NAME}.cpp)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${OpenCV_INCLUDE_DIRS})
