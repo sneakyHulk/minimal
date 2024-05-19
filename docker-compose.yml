@@ -7,26 +7,44 @@ services:
       target: image
       args:
         src: cpu
-    image: minimal_cpu
-    profiles: [ "cpu", "pubsub", "yolo_cuda", "yolo_rocm", "yolo_cpu" ]
+    image: minimal-cpu
+    profiles: [ "cpu", "pubsub", "yolo-cuda-torch", "yolo-rocm-torch", "yolo-amd64-torch", "yolo-from-source-torch" ]
+  amd64-torch-build:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: image
+      args:
+        src: amd64-torch
+    image: minimal-amd64-torch
+    profiles: [ "amd64-torch", "yolo-amd64-torch" ]
+  from-source-torch-build:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: image
+      args:
+        src: from-source-torch
+    image: minimal-from-source-torch
+    profiles: [ "from-source-torch", "yolo-from-source-torch" ]
   cuda-build:
     build:
       context: .
       dockerfile: Dockerfile
       target: image
       args:
-        src: cuda
-    image: minimal_cuda
-    profiles: [ "cuda", "yolo_cuda" ]
+        src: cuda-torch
+    image: minimal-cuda-torch
+    profiles: [ "cuda-torch", "yolo-cuda-torch" ]
   rocm-build:
     build:
       context: .
       dockerfile: Dockerfile
       target: image
       args:
-        src: rocm
-    image: minimal_rocm
-    profiles: [ "rocm", "yolo_rocm" ]
+        src: rocm-torch
+    image: minimal-rocm-torch
+    profiles: [ "rocm-torch", "yolo-rocm-torch" ]
   ##### run pubsub examples (uses cpu version) #########################################################################
   sub:
     image: minimal_cpu:latest
@@ -72,7 +90,7 @@ services:
     profiles: [ "pubsub" ]
   ##### run yolo detector ##############################################################################################
   camera_simulator:
-    image: minimal_cpu:latest
+    image: minimal-cpu:latest
     depends_on:
       - cpu-build
     container_name: camera_simulator
@@ -84,12 +102,12 @@ services:
     network_mode: host
     ipc: host
     pid: host
-    profiles: [ "yolo_cuda", "yolo_rocm", "yolo_cpu" ]
-  yolo_cuda:
-    image: minimal_cuda:latest
+    profiles: [ "yolo-cuda-torch", "yolo-rocm-torch", "yolo-amd64-torch", "yolo-from-source-torch" ]
+  yolo-cuda-torch:
+    image: minimal-cuda-torch:latest
     depends_on:
-      - cuda-build
-    container_name: yolo_cuda
+      - cuda-torch-build
+    container_name: yolo-cuda-torch
     volumes:
       - .:/src:ro
       - /etc/timezone:/etc/timezone:ro
@@ -98,12 +116,12 @@ services:
     network_mode: host
     ipc: host
     pid: host
-    profiles: [ "yolo_cuda" ]
-  yolo_rocm:
-    image: minimal_rocm:latest
+    profiles: [ "yolo-cuda-torch" ]
+  yolo-rocm-torch:
+    image: minimal-rocm-torch:latest
     depends_on:
-      - rocm-build
-    container_name: yolo_rocm
+      - rocm-torch-build
+    container_name: yolo-rocm-torch
     volumes:
       - .:/src:ro
       - /etc/timezone:/etc/timezone:ro
@@ -119,12 +137,12 @@ services:
     network_mode: host
     ipc: host
     pid: host
-    profiles: [ "yolo_rocm" ]
-  yolo_cpu:
-    image: minimal_cpu:latest
+    profiles: [ "yolo-rocm-torch" ]
+  yolo-amd64-torch:
+    image: minimal-amd64-torch:latest
     depends_on:
-      - cpu-build
-    container_name: yolo_cpu
+      - amd64-torch-build
+    container_name: yolo-amd64-torch
     volumes:
       - .:/src:ro
       - /etc/timezone:/etc/timezone:ro
@@ -133,10 +151,24 @@ services:
     network_mode: host
     ipc: host
     pid: host
-    profiles: [ "yolo_cpu" ]
+    profiles: [ "yolo-amd64-torch" ]
+  yolo-from-source-torch:
+    image: minimal-from-source-torch:latest
+    depends_on:
+      - from-source-torch-build
+    container_name: yolo-from-source-torch
+    volumes:
+      - .:/src:ro
+      - /etc/timezone:/etc/timezone:ro
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target yolo -j 8 && src/yolo/yolo"
+    stop_signal: SIGTERM
+    network_mode: host
+    ipc: host
+    pid: host
+    profiles: [ "yolo-from-source-torch" ]
   ##### run coordinate transform #######################################################################################
   image_to_world:
-    image: minimal_cpu:latest
+    image: minimal-cpu:latest
     depends_on:
       - cpu-build
     container_name: image_to_world
@@ -148,4 +180,4 @@ services:
     network_mode: host
     ipc: host
     pid: host
-    profiles: [ "yolo_cuda", "yolo_rocm", "yolo_cpu" ]
+    profiles: [ "yolo-cuda-torch", "yolo-rocm-torch", "yolo-amd64-torch", "yolo-from-source-torch" ]
