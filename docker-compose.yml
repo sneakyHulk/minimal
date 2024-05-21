@@ -8,7 +8,7 @@ services:
       args:
         src: cpu
     image: minimal-cpu
-    profiles: [ "cpu", "pubsub", "yolo-cuda-torch", "yolo-rocm-torch", "yolo-amd64-torch", "yolo-from-source-torch" ]
+    profiles: [ "cpu", "pubsub", "yolo-cpu-torch", "yolo-cuda-torch", "yolo-rocm-torch" ]
   cpu-torch-build:
     build:
       context: .
@@ -17,7 +17,7 @@ services:
       args:
         src: cpu-torch
     image: minimal-cpu-torch
-    profiles: [ "cpu-torch", "yolo-cpu-torch" ]
+    profiles: [ "cpu-torch", "yolo-cpu-torch", "yolo-cpu-torch-test" ]
   cuda-torch-build:
     build:
       context: .
@@ -79,6 +79,21 @@ services:
     ipc: host
     pid: host
     profiles: [ "pubsub" ]
+  ##### test yolo subsystem ############################################################################################
+  yolo-cpu-torch-test:
+    image: minimal-cpu-torch:latest
+    depends_on:
+      - cpu-torch-build
+    container_name: yolo-cpu-torch-test
+    volumes:
+      - .:/src:ro
+      - /etc/timezone:/etc/timezone:ro
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target yolo_test -j 8 && src/yolo/yolo_test"
+    stop_signal: SIGTERM
+    network_mode: host
+    ipc: host
+    pid: host
+    profiles: [ "yolo-cpu-torch-test" ]
   ##### run yolo detector ##############################################################################################
   camera_simulator:
     image: minimal-cpu-torch:latest
@@ -129,7 +144,7 @@ services:
     ipc: host
     pid: host
     profiles: [ "yolo-rocm-torch" ]
-  yolo-amd64-torch:
+  yolo-cpu-torch:
     image: minimal-cpu-torch:latest
     depends_on:
       - cpu-torch-build

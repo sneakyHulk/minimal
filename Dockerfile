@@ -44,6 +44,9 @@ RUN apt-get update \
        unzip \
        libeigen3-dev \
        nlohmann-json3-dev \
+       libomp-dev \
+       libtbb-dev \
+       libideep-dev \
     && apt-get -y autoremove \
     && apt-get clean autoclean \
     && rm -fr /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
@@ -75,6 +78,12 @@ RUN if [ "$src" = "cpu-torch" ]; then \
            else \
               git clone --recurse-submodules -j8 https://github.com/pytorch/pytorch.git \
               && python3 -m pip install -r pytorch/requirements.txt \
+              && export _GLIBCXX_USE_CXX11_ABI=1 \
+              && export USE_CUDA=0 && export USE_ROCM=0 \
+              && export BUILD_TEST=0 && export USE_KINETO=0 \
+              && export USE_NUMPY=0 && export USE_ITT=0 \
+              && export USE_MKLDNN=1 && export USE_MKLDNN_ACL=1 \
+              && export MKLDNN_CPU_RUNTIME=TBB &&
               && python3 -u pytorch/tools/build_libtorch.py --rerun-cmake \
               && mkdir -p ~/src/libtorch \
               && mv /pytorch/torch/bin ~/src/libtorch/ \
