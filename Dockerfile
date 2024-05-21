@@ -63,19 +63,19 @@ RUN awk -F"=" '/^network_enabled/{$2="= true"}1' /etc/ecal/ecal.ini | \
 # Print the eCAL config
 RUN ecal_config
 
-COPY requirements*.txt ./
+COPY requirements*.txt /
 RUN python3 -m pip install -r requirements_$src.txt
 
-RUN if [ "src" = "amd64-torch" ]; then \
+RUN if [ "$src" = "amd64-torch" ]; then \
         wget -c https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.3.0%2Bcpu.zip --output-document libtorch.zip \
-        && unzip libtorch.zip -d ~/src \
-    elif [ "src" = "cuda-torch" ]; then \
+        && unzip libtorch.zip -d ~/src; \
+    elif [ "$src" = "cuda-torch" ]; then \
         wget -c https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-2.3.0%2Bcu121.zip --output-document libtorch.zip \
-        && unzip libtorch.zip -d ~/src \
-    elif [ "src" = "rocm-torch" ]; then \
+        && unzip libtorch.zip -d ~/src; \
+    elif [ "$src" = "rocm-torch" ]; then \
         wget -c https://download.pytorch.org/libtorch/rocm6.0/libtorch-cxx11-abi-shared-with-deps-2.3.0%2Brocm6.0.zip --output-document libtorch.zip \
-        && unzip libtorch.zip -d ~/src \
-    elif [ "src" = "from-source-torch" ]; then \
+        && unzip libtorch.zip -d ~/src; \
+    elif [ "$src" = "from-source-torch" ]; then \
         git clone --recurse-submodules -j8 https://github.com/pytorch/pytorch.git \
         && python3 -m pip install -r pytorch/requirements.txt \
         && python3 -u pytorch/tools/build_libtorch.py --rerun-cmake \
@@ -85,7 +85,7 @@ RUN if [ "src" = "amd64-torch" ]; then \
         && mv /pytorch/torch/lib ~/src/libtorch/ \
         && mv /pytorch/torch/share ~/src/libtorch/ \
         && rm -r /build \
-        && rm -r /pytorch \
+        && rm -r /pytorch; \
     fi
 
 ENV PYTHONPATH "${PYTHONPATH}:/src"

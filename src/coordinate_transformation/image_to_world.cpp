@@ -57,8 +57,6 @@ auto image_to_world(std::map<std::string, nlohmann::json>& camera_config, std::s
 	auto tmp2 = tmp1 * (height - translation_camera(2)) / tmp1(2);
 	auto tmp3 = tmp2 + translation_camera;
 
-	common::println(tmp3);
-
 	// must be double because of double in CompactObjectList :(
 	return std::array<double, 3>{tmp3(0), tmp3(1), height};
 }
@@ -95,7 +93,7 @@ int main(int argc, char** argv) {
 				auto center_position = image_to_world(camera_config, detection2d_list->source()->str(), (e->bbox().left() + e->bbox().right()) / 2.f, (e->bbox().top() + e->bbox().bottom()) / 2.f, 0.f);
 
 				CompactObject object(0, e->object_class(), center_position, not_implemented, not_implemented, 0., 0., not_implemented, not_implemented);
-				common::println(center_position);
+				common::print(center_position, ", ");
 			}
 
 			common::println("Time taken = ", (std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - detection2d_list->timestamp()) / 1000000, " ms");

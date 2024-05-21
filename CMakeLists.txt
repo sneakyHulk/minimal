@@ -3,6 +3,8 @@ project(minimal)
 
 set(CMAKE_CXX_STANDARD 23)
 
+get_filename_component(HOME_DIRECTORY ~ ABSOLUTE)
+
 add_subdirectory(thirdparty/flatbuffers)
 add_subdirectory(thirdparty/argparse)
 
@@ -16,3 +18,5 @@ target_compile_features(common INTERFACE cxx_std_23)
 add_subdirectory(lib)
 add_subdirectory(src)
 add_subdirectory(msg)
+
+

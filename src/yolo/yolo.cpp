@@ -277,6 +277,7 @@ int main(int argc, char** argv) {
 					detection2d_list.object.push_back(detection);
 				}
 
+				detection2d_list.source = image->source()->str();
 				detection2d_list.num_objects = num_objects;
 				detection2d_list.timestamp = image->timestamp();
 

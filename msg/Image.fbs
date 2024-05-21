@@ -2,6 +2,7 @@ table Image {
     timestamp:ulong; // UTC timestamp since epoch in ns
     width:int;
     height:int;
+    source:string;
     mat:[ubyte];
 }
 

@@ -35,6 +35,7 @@ int main(int argc, char** argv) {
 		image.timestamp = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
 		image.width = image_read.cols;
 		image.height = image_read.rows;
+		image.source = "s110_w_cam_8";
 		image.mat = {image_read.data, image_read.data + (image_read.total() * image_read.elemSize())};
 
 		flatbuffers::FlatBufferBuilder builder;

@@ -27,7 +27,7 @@ services:
         src: from-source-torch
     image: minimal-from-source-torch
     profiles: [ "from-source-torch", "yolo-from-source-torch" ]
-  cuda-build:
+  cuda-torch-build:
     build:
       context: .
       dockerfile: Dockerfile
@@ -36,7 +36,7 @@ services:
         src: cuda-torch
     image: minimal-cuda-torch
     profiles: [ "cuda-torch", "yolo-cuda-torch" ]
-  rocm-build:
+  rocm-torch-build:
     build:
       context: .
       dockerfile: Dockerfile
