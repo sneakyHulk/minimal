@@ -46,7 +46,6 @@ RUN apt-get update \
        nlohmann-json3-dev \
        libomp-dev \
        libtbb-dev \
-       libideep-dev \
     && apt-get -y autoremove \
     && apt-get clean autoclean \
     && rm -fr /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
@@ -72,18 +71,24 @@ COPY requirements*.txt /
 RUN if [ "$src" = "cpu-torch" ]; then \
         python3 -m pip install --index-url https://download.pytorch.org/whl/cpu -r requirements_torch.txt \
         && python3 -m pip install --index-url https://pypi.python.org/simple -r requirements_yolo.txt \
-        && if [ "$BUILDPLATFORM" = "linux/amd64" ]; then \
+        && if [ "$BUILDPLATFORM" = "linux/amd642" ]; then \
               wget -c https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.3.0%2Bcpu.zip --output-document libtorch.zip \
               && unzip libtorch.zip -d ~/src; \
            else \
               git clone --recurse-submodules -j8 https://github.com/pytorch/pytorch.git \
               && python3 -m pip install -r pytorch/requirements.txt \
+              && python3 -m pip install mkl-static mkl-include \
               && export _GLIBCXX_USE_CXX11_ABI=1 \
               && export USE_CUDA=0 && export USE_ROCM=0 \
               && export BUILD_TEST=0 && export USE_KINETO=0 \
               && export USE_NUMPY=0 && export USE_ITT=0 \
               && export USE_MKLDNN=1 && export USE_MKLDNN_ACL=1 \
-              && export MKLDNN_CPU_RUNTIME=TBB &&
+              && export MKLDNN_CPU_RUNTIME=TBB && USE_STATIC_MKL=1 \
+              && export USE_DISTRIBUTED=0 && export USE_OPENMP=1 \
+              && export USE_MKLDNN=1 && export MKLDNN_CPU_RUNTIME=TBB \
+              && export BLAS=MKL && export MKL_THREADING=TBB \
+              && export USE_TBB=1 && export USE_SYSTEM_TBB=1 \
+              && export CMAKE_PREFIX_PATH=/usr/local/lib/python3.10/dist-packages \
               && python3 -u pytorch/tools/build_libtorch.py --rerun-cmake \
               && mkdir -p ~/src/libtorch \
               && mv /pytorch/torch/bin ~/src/libtorch/ \

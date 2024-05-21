@@ -12,6 +12,7 @@ add_library(common INTERFACE)
 target_include_directories(common INTERFACE thirdparty/common/include)
 target_link_libraries(common INTERFACE)
 target_compile_features(common INTERFACE cxx_std_23)
+find_package(TBB REQUIRED)
 
 ##### subdirectories ###################################################################################################
 
