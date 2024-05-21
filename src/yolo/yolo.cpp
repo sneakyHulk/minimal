@@ -14,6 +14,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 #include <opencv2/viz/types.hpp>
+#include <string>
 #include <thread>
 
 #include "common_output.h"

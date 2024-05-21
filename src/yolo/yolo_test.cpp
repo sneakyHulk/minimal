@@ -9,6 +9,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 #include <opencv2/viz/types.hpp>
+#include <string>
 
 using torch::indexing::None;
 using torch::indexing::Slice;
