@@ -1,14 +1,12 @@
-# src: cpu, amd64-torch, cuda-torch, rocm-torch, from-source-torch
+# src: cpu, cpu-torch, cuda-torch, rocm-torch, from-source-torch
 ARG src=cpu
 
-FROM ubuntu:jammy AS cpu-base
-FROM ubuntu:jammy AS amd64-torch-base
-FROM ubuntu:jammy AS from-source-torch-base
-FROM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04 AS cuda-torch-base
-FROM rocm/dev-ubuntu-22.04:6.0-complete AS rocm-torch-base
+FROM --platform=$BUILDPLATFORM ubuntu:jammy AS cpu-base
+FROM --platform=$BUILDPLATFORM ubuntu:jammy AS cpu-torch-base
+FROM --platform=$BUILDPLATFORM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04 AS cuda-torch-base
+FROM --platform=$BUILDPLATFORM rocm/dev-ubuntu-22.04:6.0-complete AS rocm-torch-base
 
 FROM ${src}-base AS image
-ARG src
 
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive \
@@ -63,29 +61,39 @@ RUN awk -F"=" '/^network_enabled/{$2="= true"}1' /etc/ecal/ecal.ini | \
 # Print the eCAL config
 RUN ecal_config
 
-COPY requirements*.txt /
-RUN python3 -m pip install -r requirements_$src.txt
+ARG src
+ARG BUILDPLATFORM
 
-RUN if [ "$src" = "amd64-torch" ]; then \
-        wget -c https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.3.0%2Bcpu.zip --output-document libtorch.zip \
-        && unzip libtorch.zip -d ~/src; \
+# Install libtorch and pytorch
+COPY requirements*.txt /
+RUN if [ "$src" = "cpu-torch" ]; then \
+        python3 -m pip install --index-url https://download.pytorch.org/whl/cpu -r requirements_torch.txt \
+        && python3 -m pip install --index-url https://pypi.python.org/simple -r requirements_yolo.txt \
+        && if [ "$BUILDPLATFORM" = "linux/amd64" ]; then \
+              wget -c https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.3.0%2Bcpu.zip --output-document libtorch.zip \
+              && unzip libtorch.zip -d ~/src; \
+           else \
+              git clone --recurse-submodules -j8 https://github.com/pytorch/pytorch.git \
+              && python3 -m pip install -r pytorch/requirements.txt \
+              && python3 -u pytorch/tools/build_libtorch.py --rerun-cmake \
+              && mkdir -p ~/src/libtorch \
+              && mv /pytorch/torch/bin ~/src/libtorch/ \
+              && mv /pytorch/torch/include ~/src/libtorch/ \
+              && mv /pytorch/torch/lib ~/src/libtorch/ \
+              && mv /pytorch/torch/share ~/src/libtorch/ \
+              && rm -r /build \
+              && rm -r /pytorch; \
+           fi; \
     elif [ "$src" = "cuda-torch" ]; then \
-        wget -c https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-2.3.0%2Bcu121.zip --output-document libtorch.zip \
+        python3 -m pip install --index-url https://download.pytorch.org/whl/cu121 -r requirements_torch.txt \
+        && python3 -m pip install --index-url https://pypi.python.org/simple -r requirements_yolo.txt \
+        && wget -c https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-2.3.0%2Bcu121.zip --output-document libtorch.zip \
         && unzip libtorch.zip -d ~/src; \
     elif [ "$src" = "rocm-torch" ]; then \
-        wget -c https://download.pytorch.org/libtorch/rocm6.0/libtorch-cxx11-abi-shared-with-deps-2.3.0%2Brocm6.0.zip --output-document libtorch.zip \
+        python3 -m pip install --index-url https://download.pytorch.org/whl/rocm6.0 -r requirements_torch.txt \
+        && python3 -m pip install --index-url https://pypi.python.org/simple -r requirements_yolo.txt \
+        && wget -c https://download.pytorch.org/libtorch/rocm6.0/libtorch-cxx11-abi-shared-with-deps-2.3.0%2Brocm6.0.zip --output-document libtorch.zip \
         && unzip libtorch.zip -d ~/src; \
-    elif [ "$src" = "from-source-torch" ]; then \
-        git clone --recurse-submodules -j8 https://github.com/pytorch/pytorch.git \
-        && python3 -m pip install -r pytorch/requirements.txt \
-        && python3 -u pytorch/tools/build_libtorch.py --rerun-cmake \
-        && mkdir -p ~/src/libtorch \
-        && mv /pytorch/torch/bin ~/src/libtorch/ \
-        && mv /pytorch/torch/include ~/src/libtorch/ \
-        && mv /pytorch/torch/lib ~/src/libtorch/ \
-        && mv /pytorch/torch/share ~/src/libtorch/ \
-        && rm -r /build \
-        && rm -r /pytorch; \
     fi
 
 ENV PYTHONPATH "${PYTHONPATH}:/src"

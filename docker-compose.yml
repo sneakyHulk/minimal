@@ -9,24 +9,15 @@ services:
         src: cpu
     image: minimal-cpu
     profiles: [ "cpu", "pubsub", "yolo-cuda-torch", "yolo-rocm-torch", "yolo-amd64-torch", "yolo-from-source-torch" ]
-  amd64-torch-build:
+  cpu-torch-build:
     build:
       context: .
       dockerfile: Dockerfile
       target: image
       args:
-        src: amd64-torch
-    image: minimal-amd64-torch
-    profiles: [ "amd64-torch", "yolo-amd64-torch" ]
-  from-source-torch-build:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: image
-      args:
-        src: from-source-torch
-    image: minimal-from-source-torch
-    profiles: [ "from-source-torch", "yolo-from-source-torch" ]
+        src: cpu-torch
+    image: minimal-cpu-torch
+    profiles: [ "cpu-torch", "yolo-cpu-torch" ]
   cuda-torch-build:
     build:
       context: .
@@ -90,9 +81,9 @@ services:
     profiles: [ "pubsub" ]
   ##### run yolo detector ##############################################################################################
   camera_simulator:
-    image: minimal-cpu:latest
+    image: minimal-cpu-torch:latest
     depends_on:
-      - cpu-build
+      - cpu-torch-build
     container_name: camera_simulator
     volumes:
       - .:/src:ro
@@ -102,7 +93,7 @@ services:
     network_mode: host
     ipc: host
     pid: host
-    profiles: [ "yolo-cuda-torch", "yolo-rocm-torch", "yolo-amd64-torch", "yolo-from-source-torch" ]
+    profiles: [ "yolo-cuda-torch", "yolo-rocm-torch", "yolo-cpu-torch" ]
   yolo-cuda-torch:
     image: minimal-cuda-torch:latest
     depends_on:
@@ -139,10 +130,10 @@ services:
     pid: host
     profiles: [ "yolo-rocm-torch" ]
   yolo-amd64-torch:
-    image: minimal-amd64-torch:latest
+    image: minimal-cpu-torch:latest
     depends_on:
-      - amd64-torch-build
-    container_name: yolo-amd64-torch
+      - cpu-torch-build
+    container_name: yolo-cpu-torch
     volumes:
       - .:/src:ro
       - /etc/timezone:/etc/timezone:ro
@@ -151,26 +142,12 @@ services:
     network_mode: host
     ipc: host
     pid: host
-    profiles: [ "yolo-amd64-torch" ]
-  yolo-from-source-torch:
-    image: minimal-from-source-torch:latest
-    depends_on:
-      - from-source-torch-build
-    container_name: yolo-from-source-torch
-    volumes:
-      - .:/src:ro
-      - /etc/timezone:/etc/timezone:ro
-    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target yolo -j 8 && src/yolo/yolo"
-    stop_signal: SIGTERM
-    network_mode: host
-    ipc: host
-    pid: host
-    profiles: [ "yolo-from-source-torch" ]
+    profiles: [ "yolo-cpu-torch" ]
   ##### run coordinate transform #######################################################################################
   image_to_world:
-    image: minimal-cpu:latest
+    image: minimal-cpu-torch:latest
     depends_on:
-      - cpu-build
+      - cpu-torch-build
     container_name: image_to_world
     volumes:
       - .:/src:ro
@@ -180,4 +157,4 @@ services:
     network_mode: host
     ipc: host
     pid: host
-    profiles: [ "yolo-cuda-torch", "yolo-rocm-torch", "yolo-amd64-torch", "yolo-from-source-torch" ]
+    profiles: [ "yolo-cuda-torch", "yolo-rocm-torch", "yolo-cpu-torch" ]
