@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.28)
 project(yolo)
 
 
-#set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 #set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -29,7 +29,7 @@ target_link_libraries(${PROJECT_NAME}
         Image
         CompactObject
 )
-target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 add_dependencies(${PROJECT_NAME} GENERATE_Detection2D GENERATE_Image GENERATE_CompactObject)
 
@@ -53,5 +53,5 @@ target_link_libraries(${PROJECT_NAME}
         ${OpenCV_LIBS}
         ${TORCH_LIBRARIES}
 )
-target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")

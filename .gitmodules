@@ -10,4 +10,6 @@
 [submodule "thirdparty/argparse"]
 	path = thirdparty/argparse
 	url = https://github.com/p-ranav/argparse.git
-
+[submodule "thirdparty/libOpenDRIVE"]
+	path = thirdparty/libOpenDRIVE
+	url = https://github.com/pageldev/libOpenDRIVE.git

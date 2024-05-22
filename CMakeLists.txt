@@ -7,6 +7,7 @@ get_filename_component(HOME_DIRECTORY ~ ABSOLUTE)
 
 add_subdirectory(thirdparty/flatbuffers)
 add_subdirectory(thirdparty/argparse)
+add_subdirectory(thirdparty/libOpenDRIVE)
 
 add_library(common INTERFACE)
 target_include_directories(common INTERFACE thirdparty/common/include)

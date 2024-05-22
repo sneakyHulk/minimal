@@ -1,13 +1,13 @@
 struct CompactObject {
     id:ulong;                   // object id
     object_class:ubyte;         // object vehicle class
-    position:[float64:3];       // xyz position (position m in road coordinate system)
-    position_llh:[float64:3];   // llh position (position LLH in geoghraphic coordinatre system)
-    velocity:[float64:3];       // xyz velocity (velocity vector m/s in road coordinate system)
-    speed:float64;              // speed (absolute speed m/s)
-    heading:float64;            // heading (orientation deg to true north)
-    rotation:[float64:3];       // rotation (rotation vector deg in road coordinate system)
-    extent:[float64:3];         // object dimensions
+    position:[float:3];       // xyz position (position m in road coordinate system)
+    position_llh:[float:3];   // llh position (position LLH in geoghraphic coordinatre system)
+    velocity:[float:3];       // xyz velocity (velocity vector m/s in road coordinate system)
+    speed:float;              // speed (absolute speed m/s)
+    heading:float;            // heading (orientation deg to true north)
+    rotation:[float:3];       // rotation (rotation vector deg in road coordinate system)
+    extent:[float:3];         // object dimensions
 }
 
 table CompactObjectList {

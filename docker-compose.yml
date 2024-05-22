@@ -96,9 +96,9 @@ services:
     profiles: [ "yolo-cpu-torch-test" ]
   ##### run yolo detector ##############################################################################################
   camera_simulator:
-    image: minimal-cpu-torch:latest
+    image: minimal-cpu:latest
     depends_on:
-      - cpu-torch-build
+      - cpu-build
     container_name: camera_simulator
     volumes:
       - .:/src:ro
@@ -160,9 +160,9 @@ services:
     profiles: [ "yolo-cpu-torch" ]
   ##### run coordinate transform #######################################################################################
   image_to_world:
-    image: minimal-cpu-torch:latest
+    image: minimal-cpu:latest
     depends_on:
-      - cpu-torch-build
+      - cpu-build
     container_name: image_to_world
     volumes:
       - .:/src:ro
