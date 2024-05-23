@@ -16,7 +16,6 @@
 #include <OpenDriveMap.h>
 
 #include <Eigen/Eigen>
-#include <random>
 
 #include "CompactObject_generated.h"
 #include "Image_generated.h"
@@ -25,10 +24,6 @@
 #include "signal_handler.h"
 
 int main() {
-	std::random_device rd;
-	std::mt19937 gen(rd());
-	std::uniform_int_distribution<> dis(0, 255);
-
 	auto display_width = 1920;
 	auto display_height = 1200;
 
@@ -77,7 +72,6 @@ int main() {
 			for (odr::Lane const& lane : lanesection.get_lanes()) {
 				auto lane_border = road.get_lane_border_line(lane, 0.1);
 
-				cv::Scalar random_color(dis(gen), dis(gen), dis(gen));
 				cv::Scalar black_color(0, 0, 0);
 
 				for (auto const [start, end] : lane_border | std::ranges::views::adjacent<2>) {
