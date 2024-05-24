@@ -98,3 +98,27 @@ int main() {
 
 	return 0;
 }
+
+/*
+Eigen::Vector3d getCameraOrigin() const
+{
+	Eigen::Matrix3d _R_cam2world = _R_world2cam;
+	Eigen::Vector3d _t_cam2world_world = _t_world2cam_cam;
+	utils::invert_transform(_R_cam2world, _t_cam2world_world);
+
+Eigen::Vector3d origin = Eigen::Vector3d::Zero();
+origin = _R_cam2world * origin + _t_cam2world_world;
+return origin;
+
+Eigen::Vector3d getCameraOrigin() const
+	   {
+		   Eigen::Vector3d origin = Eigen::Vector3d::Zero();
+		   if (_projections.empty()) return origin;
+
+for (auto &projection : _projections) {
+   origin += projection.second.getCameraOrigin() * 1/_projections.size();
+}
+return origin;
+}
+}
+ */

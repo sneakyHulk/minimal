@@ -1,5 +1,4 @@
 add_subdirectory(camera_simulator)
 add_subdirectory(yolo)
 add_subdirectory(pubsub)
-add_subdirectory(coordinate_transformation)
-add_subdirectory(display)
+add_subdirectory(transformation)
