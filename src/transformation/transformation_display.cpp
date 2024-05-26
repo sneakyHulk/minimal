@@ -1,71 +1,71 @@
-#include <ecal/ecal.h>
-#include <ecal/msg/flatbuffers/subscriber.h>
-#include <flatbuffers/flatbuffers.h>
-
-#include <fstream>
-#include <opencv2/core.hpp>
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/opencv.hpp>
-#include <opencv2/viz/types.hpp>
-#include <ranges>
-// #include <rapidxml/rapidxml.hpp>
-
 #include <Lane.h>
 #include <LaneSection.h>
 #include <OpenDriveMap.h>
+#include <ecal/ecal.h>
+#include <ecal/msg/flatbuffers/subscriber.h>
+#include <flatbuffers/flatbuffers.h>
+#include <transformation/Config.h>
 
 #include <Eigen/Eigen>
+#include <fstream>
+#include <opencv2/opencv.hpp>
+#include <ranges>
 
 #include "CompactObject_generated.h"
 #include "Image_generated.h"
 #include "common_output.h"
 #include "eCAL_RAII.h"
 #include "signal_handler.h"
+#include "transformation/Config.h"
+#include "transformation/EigenUtils.h"
+
+void print_camera_view_field(cv::Mat& view, Config const& config, std::string const& camera_name, Eigen::Matrix<double, 4, 4> const& affine_transformation_base_to_image_center) {
+	Eigen::Matrix<double, 4, 1> const left_bottom = affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(100., config.camera_config.at(camera_name).image_height - 100., 0.);
+	Eigen::Matrix<double, 4, 1> const left_top = affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(100., 200., 0.);
+	Eigen::Matrix<double, 4, 1> const right_bottom =
+	    affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(config.camera_config.at(camera_name).image_width - 100., config.camera_config.at(camera_name).image_height - 100., 0.);
+	Eigen::Matrix<double, 4, 1> const right_top = affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(config.camera_config.at(camera_name).image_width - 100., 200., 0.);
+
+	std::cout << cv::Point(static_cast<int>(left_bottom(0, 0)), static_cast<int>(left_bottom(1, 0))) << std::endl;
+	std::cout << cv::Point(static_cast<int>(left_top(0, 0)), static_cast<int>(left_top(1, 0))) << std::endl;
+	std::cout << cv::Point(static_cast<int>(right_bottom(0, 0)), static_cast<int>(right_bottom(1, 0))) << std::endl;
+	std::cout << cv::Point(static_cast<int>(right_top(0, 0)), static_cast<int>(right_top(1, 0))) << std::endl;
+
+	cv::Scalar other_color(0, 255, 0);
+
+	for (auto i = 0.; i <= 300.; ++i) {
+		Eigen::Matrix<double, 4, 1> const right_top = affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(config.camera_config.at(camera_name).image_width, i, 0.);
+		cv::circle(view, cv::Point(static_cast<int>(right_top(0, 0)), static_cast<int>(right_top(1, 0))), 1, other_color, 10);
+	}
+
+	for (auto i = 0.; i <= 300.; ++i) {
+		Eigen::Matrix<double, 4, 1> const left_top = affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(0., i, 0.);
+		cv::circle(view, cv::Point(static_cast<int>(left_top(0, 0)), static_cast<int>(left_top(1, 0))), 1, other_color, 10);
+	}
+
+	cv::circle(view, cv::Point(static_cast<int>(left_bottom(0, 0)), static_cast<int>(left_bottom(1, 0))), 1, other_color, 10);
+	cv::circle(view, cv::Point(static_cast<int>(left_top(0, 0)), static_cast<int>(left_top(1, 0))), 1, other_color, 10);
+	cv::circle(view, cv::Point(static_cast<int>(right_bottom(0, 0)), static_cast<int>(right_bottom(1, 0))), 1, other_color, 10);
+	cv::circle(view, cv::Point(static_cast<int>(right_top(0, 0)), static_cast<int>(right_top(1, 0))), 1, other_color, 10);
+
+	cv::imshow("display", view);
+	cv::waitKey(0);
+}
 
 int main() {
 	auto display_width = 1920;
 	auto display_height = 1200;
+	auto scaling = 4.;
+	cv::Mat view(display_height, display_width, CV_8UC3, cv::Scalar(255, 255, 255));  // Declaring a white matrix
 
-	Eigen::Matrix<double, 4, 4> affine_transformation_map_origin_to_utm;
-	affine_transformation_map_origin_to_utm << 1., 0., 0., 695942.4856864865, 0., 1., 0., 5346521.128436302, 0., 0., 1., 485.0095881917835, 0., 0., 0., 1.;
-	Eigen::Matrix<double, 4, 4> affine_transformation_utm_to_map_origin = affine_transformation_map_origin_to_utm.inverse();
+	Config config = make_config();
 
-	Eigen::Matrix<double, 4, 4> affine_transformation_map_origin_to_s110_base;
-	affine_transformation_map_origin_to_s110_base << 0., 1., 0., -854.96568588, -1., 0., 0., -631.98486299, 0., 0., 1., 0., 0., 0., 0., 1.;
-	Eigen::Matrix<double, 4, 4> affine_transformation_s110_base_to_map_origin = affine_transformation_map_origin_to_s110_base.inverse();
-
-	Eigen::Matrix<double, 4, 4> affine_transformation_s110_base_to_image_center;
-	affine_transformation_s110_base_to_image_center << 1., 0., 0., display_width / 2., 0., 1., 0., display_height / 2., 0., 0., 1., 0., 0., 0., 0., 1.;
-
-	Eigen::Vector4d camera_east_s110_base;
-	camera_east_s110_base << -15.7626, 1.45602, 7.81478, 1.;
-
-	Eigen::Vector4d s110_base;
-	s110_base << 0., 0., 0., 1.;
-
-	Eigen::Vector4d intersection_center;
-	intersection_center << 695288.632, 5347362.337, 0., 1.;
-
-	auto test = affine_transformation_map_origin_to_utm * affine_transformation_map_origin_to_s110_base.inverse() * camera_east_s110_base;
-	auto test2 = affine_transformation_map_origin_to_utm * affine_transformation_map_origin_to_s110_base.inverse() * s110_base;
-	auto test3 = affine_transformation_s110_base_to_image_center * affine_transformation_map_origin_to_s110_base * affine_transformation_utm_to_map_origin * intersection_center;
-
-	Eigen::Matrix<double, 4, 4> const affine_transformation_utm_to_image_center = affine_transformation_s110_base_to_image_center * affine_transformation_map_origin_to_s110_base * affine_transformation_utm_to_map_origin;
-
-	std::cout << test << std::endl;
-	std::cout << test2 << std::endl;
-	std::cout << test3 << std::endl;
+	Eigen::Matrix<double, 4, 4> affine_transformation_s110_base_to_image_center = make_matrix<4, 4>(1. * scaling, 0., 0., display_width / 2., 0., 1. * scaling, 0., display_height / 2., 0., 0., 1. * scaling, 0., 0., 0., 0., 1.);
+	Eigen::Matrix<double, 4, 4> const affine_transformation_utm_to_image_center =
+	    affine_transformation_s110_base_to_image_center * config.affine_transformation_map_origin_to_bases.at("s110_base") * config.affine_transformation_utm_to_map_origin;
 
 	auto filename = std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("2021-07-07_1490_Providentia_Plus_Plus_1_6.xodr");
-
 	odr::OpenDriveMap garching(filename);
-	std::vector<odr::Vec3D> lane_pts;
-	std::vector<odr::Vec3D> roadmark_pts;
-	std::vector<odr::Vec3D> road_object_pts;
-	std::vector<odr::Vec3D> road_signal_pts;
-
-	cv::Mat view(display_height, display_width, CV_8UC3, cv::Scalar(255, 255, 255));  // Declaring a white matrix
 
 	for (odr::Road const& road : garching.get_roads()) {
 		for (odr::LaneSection const& lanesection : road.get_lanesections()) {
@@ -83,15 +83,20 @@ int main() {
 					auto start_transformed = affine_transformation_utm_to_image_center * start_;
 					auto end_transformed = affine_transformation_utm_to_image_center * end_;
 
-					cv::line(view, cv::Point(start_transformed(0), start_transformed(1)), cv::Point(end_transformed(0), end_transformed(1)), black_color, 1);
+					cv::line(view, cv::Point(static_cast<int>(start_transformed(0)), static_cast<int>(start_transformed(1))), cv::Point(static_cast<int>(end_transformed(0)), static_cast<int>(end_transformed(1))), black_color, 1);
 				}
 			}
 		}
 	}
 
-	auto tmp = affine_transformation_s110_base_to_image_center * s110_base;
+	auto tmp = affine_transformation_s110_base_to_image_center * make_matrix<4, 1>(0., 0., 0., 1.);
 	cv::Scalar other_color(0, 0, 255);
-	cv::circle(view, cv::Point(tmp(0), tmp(1)), 1, other_color, 5);
+	cv::circle(view, cv::Point(static_cast<int>(tmp(0)), static_cast<int>(tmp(1))), 1, other_color, 5);
+
+	print_camera_view_field(view, config, "s110_s_cam_8", affine_transformation_s110_base_to_image_center);
+	// print_camera_view_field(view, config, "s110_n_cam_8", affine_transformation_s110_base_to_image_center);
+	// print_camera_view_field(view, config, "s110_o_cam_8", affine_transformation_s110_base_to_image_center);
+	// print_camera_view_field(view, config, "s110_w_cam_8", affine_transformation_s110_base_to_image_center);
 
 	cv::imshow("display", view);
 	cv::waitKey(0);
@@ -102,18 +107,18 @@ int main() {
 /*
 Eigen::Vector3d getCameraOrigin() const
 {
-	Eigen::Matrix3d _R_cam2world = _R_world2cam;
-	Eigen::Vector3d _t_cam2world_world = _t_world2cam_cam;
-	utils::invert_transform(_R_cam2world, _t_cam2world_world);
+    Eigen::Matrix3d _R_cam2world = _R_world2cam;
+    Eigen::Vector3d _t_cam2world_world = _t_world2cam_cam;
+    utils::invert_transform(_R_cam2world, _t_cam2world_world);
 
 Eigen::Vector3d origin = Eigen::Vector3d::Zero();
 origin = _R_cam2world * origin + _t_cam2world_world;
 return origin;
 
 Eigen::Vector3d getCameraOrigin() const
-	   {
-		   Eigen::Vector3d origin = Eigen::Vector3d::Zero();
-		   if (_projections.empty()) return origin;
+       {
+           Eigen::Vector3d origin = Eigen::Vector3d::Zero();
+           if (_projections.empty()) return origin;
 
 for (auto &projection : _projections) {
    origin += projection.second.getCameraOrigin() * 1/_projections.size();
