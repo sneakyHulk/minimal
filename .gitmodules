@@ -13,3 +13,6 @@
 [submodule "thirdparty/libOpenDRIVE"]
 	path = thirdparty/libOpenDRIVE
 	url = https://github.com/pageldev/libOpenDRIVE.git
+[submodule "thirdparty/cvplot"]
+	path = thirdparty/cvplot
+	url = https://github.com/Profactor/cv-plot.git

@@ -7,6 +7,7 @@ project(image_to_world)
 find_package(nlohmann_json REQUIRED)
 find_package(Eigen3 REQUIRED)
 
+
 add_executable(${PROJECT_NAME} ${PROJECT_NAME}.cpp)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include/${CURRENT_DIR})
 target_link_libraries(${PROJECT_NAME}
@@ -28,10 +29,11 @@ project(transformation_display)
 
 find_package(OpenCV REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(Boost REQUIRED)
 
 add_executable(${PROJECT_NAME} ${PROJECT_NAME}.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/include/${CURRENT_DIR})
-target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME}
         ecal
         common
@@ -41,6 +43,8 @@ target_link_libraries(${PROJECT_NAME}
         flatbuffers
         OpenDrive
         Eigen3::Eigen
+        ${Boost_LIBRARIES}
+        CvPlot
 )
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
