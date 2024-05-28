@@ -5,6 +5,9 @@
 #include <common_output.h>
 
 #include <Eigen/Eigen>
+#include <algorithm>
+#include <autodiff/reverse/var.hpp>
+#include <autodiff/reverse/var/eigen.hpp>
 #include <boost/geometry.hpp>
 #include <boost/geometry/algorithms/is_convex.hpp>
 #include <boost/geometry/geometries/ring.hpp>
@@ -50,6 +53,23 @@ namespace boost::geometry::traits {
 	};
 }  // namespace boost::geometry::traits
 
+[[nodiscard]] autodiff::Vector4var image_to_world(double x, autodiff::var y, double height, CameraConfig const& config) {
+	autodiff::Vector3var image_coordinates;
+	image_coordinates << x, y, 1.0;
+
+	autodiff::Vector3var tmp1 = config.KR_inv * image_coordinates;
+	autodiff::Vector3var tmp2 = tmp1 * (height - config.translation_camera(2)) / tmp1(2);
+	autodiff::Vector3var tmp3 = tmp2 + config.translation_camera;
+
+	autodiff::Vector4var ret;
+	ret(0) = tmp3(0);
+	ret(1) = tmp3(1);
+	ret(2) = tmp3(2);
+	ret(3) = 1.;
+
+	return ret;
+}
+
 void draw_camera_fov(cv::Mat& view, Config const& config, std::string const& camera_name, Eigen::Matrix<double, 4, 4> const& affine_transformation_base_to_image_center) {
 	std::seed_seq seq(camera_name.begin(), camera_name.end());
 	std::mt19937 rng(seq);
@@ -59,46 +79,94 @@ void draw_camera_fov(cv::Mat& view, Config const& config, std::string const& cam
 	Eigen::Matrix<double, 4, 1> const right_bottom =
 	    affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(config.camera_config.at(camera_name).image_width, config.camera_config.at(camera_name).image_height, 0.);
 
+	// The padding of the top y coordinators is necessary because if the camera points to the sky, it is no longer possible to compute a 2D point from it (singularity).
+	// Testing different paddings:
+
+	int left_padding = 0;
+	{
+		autodiff::var y = 0;
+		autodiff::Vector4var left_top = affine_transformation_base_to_image_center * image_to_world(0., y, 0., config.camera_config.at(camera_name));
+
+		std::vector<double> derivates;
+		for (auto padding = 0; padding < config.camera_config.at(camera_name).image_height; ++padding) {
+			y.update(padding);
+			left_top(1).update();
+			auto [dy] = autodiff::derivatives(left_top(1), autodiff::wrt(y));
+			derivates.push_back(dy);
+		}
+		left_padding = static_cast<int>(std::distance(derivates.begin(), std::max_element(derivates.begin(), derivates.end(), [](double a, double b) { return std::fabs(a) < std::fabs(b); })));
+		left_padding *= 2; // more distance to the singularity
+	}
+
+	int right_padding = 0;
+	{
+		autodiff::var y = 0;
+		autodiff::Vector4var right_top = affine_transformation_base_to_image_center * image_to_world(config.camera_config.at(camera_name).image_width, y, 0., config.camera_config.at(camera_name));
+
+		std::vector<double> derivates;
+		for (auto padding = 0; padding < config.camera_config.at(camera_name).image_height; ++padding) {
+			y.update(padding);
+			right_top(1).update();
+			auto [dy] = autodiff::derivatives(right_top(1), autodiff::wrt(y));
+			derivates.push_back(dy);
+		}
+		right_padding = static_cast<int>(std::distance(derivates.begin(), std::max_element(derivates.begin(), derivates.end(), [](double const a, double const b) { return std::fabs(a) < std::fabs(b); })));
+		right_padding *= 2; // more distance to the singularity
+	}
+
+	common::println(camera_name, ": left_padding: ", left_padding, ", right_padding: ", right_padding);
+
 	//// To see the singulatities:
-	// std::vector<double> x(1000), y(x.size());
+
+	//	std::max_element(.begin(), .end(), [](const int& a, const int& b)
+	//	{
+	//    return abs(a) < abs(b);
+	//});
+
+	// std::vector<double> x(config.camera_config.at(camera_name).image_height), y(x.size()), y2(x.size());
 	// for (auto i = 0; i < x.size(); ++i) {
 	//	Eigen::Matrix<double, 4, 1> const test = affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(0., i, 0.);
+	//
+	//	y_coordinate.update(i);
+	//	test2(1).update();
+	//	auto [t] = autodiff::derivatives(test2(1), autodiff::wrt(y_coordinate));
+	//
 	//	x[i] = i;
 	//	y[i] = test(1);
-	// }
+	//	y2[i] = t;
+	//}
 	//
 	// auto axes = CvPlot::makePlotAxes();
-	// axes.create<CvPlot::Series>(x, y, "-g");
+	// axes.create<CvPlot::Series>(x, y2, "-g");
 	//
 	// cv::Mat mat = axes.render(300, 400);
 	// CvPlot::show("mywindow", axes);
 
-	// The padding of the top y coordinators is necessary because if the camera points to the sky, it is no longer possible to compute a 2D point from it (singularity).
-	auto padding = 0;
-	while (true) {
-		Eigen::Matrix<double, 4, 1> const left_top = affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(0., padding, 0.);
-		Eigen::Matrix<double, 4, 1> const right_top = affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(config.camera_config.at(camera_name).image_width, padding, 0.);
+	// while (true) {
+	//	Eigen::Matrix<double, 4, 1> const left_top = affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(0., padding, 0.);
+	//	Eigen::Matrix<double, 4, 1> const right_top = affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(config.camera_config.at(camera_name).image_width, padding, 0.);
+	//
+	//	boost::geometry::model::ring<Eigen::Matrix<double, 4, 1>> r;
+	//	boost::geometry::append(r, left_bottom);
+	//	boost::geometry::append(r, left_top);
+	//	boost::geometry::append(r, right_top);
+	//	boost::geometry::append(r, right_bottom);
+	//
+	//	if (boost::geometry::is_convex(r)) {
+	//		padding *= 1.5;  // to be further away from the singularities
+	//		break;
+	//	}
+	//
+	//	if (!padding) {
+	//		common::println("Camera '", camera_name, "' has pixel which lay in the sky. Computation of a 2D point with these is impossible!");
+	//	}
+	//
+	//	++padding;
+	//}
+	// padding += 10;
 
-		boost::geometry::model::ring<Eigen::Matrix<double, 4, 1>> r;
-		boost::geometry::append(r, left_bottom);
-		boost::geometry::append(r, left_top);
-		boost::geometry::append(r, right_top);
-		boost::geometry::append(r, right_bottom);
-
-		if (boost::geometry::is_convex(r)) {
-			padding *= 1.5;  // to be further away from the singularities
-			break;
-		}
-
-		if (!padding) {
-			common::println("Camera '", camera_name, "' has pixel which lay in the sky. Computation of a 2D point with these is impossible!");
-		}
-
-		++padding;
-	}
-
-	Eigen::Matrix<double, 4, 1> const left_top = affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(0., padding, 0.);
-	Eigen::Matrix<double, 4, 1> const right_top = affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(config.camera_config.at(camera_name).image_width, padding, 0.);
+	Eigen::Matrix<double, 4, 1> const left_top = affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(0., left_padding, 0.);
+	Eigen::Matrix<double, 4, 1> const right_top = affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(config.camera_config.at(camera_name).image_width, right_padding, 0.);
 
 	auto overlay = view.clone();
 
@@ -116,7 +184,10 @@ void draw_camera_fov(cv::Mat& view, Config const& config, std::string const& cam
 }
 
 auto draw_map(std::filesystem::path odr_map, Config const& config, std::string const base_name = "s110_base", int display_width = 1920, int display_height = 1200, double scaling = 4.) -> std::tuple<cv::Mat, Eigen::Matrix<double, 4, 4>> {
-	Eigen::Matrix<double, 4, 4> const affine_transformation_base_to_image_center = make_matrix<4, 4>(1. * scaling, 0., 0., display_width / 2., 0., 1. * scaling, 0., display_height / 2., 0., 0., 1. * scaling, 0., 0., 0., 0., 1.);
+	Eigen::Matrix<double, 4, 4> const affine_transformation_rotate_90 = make_matrix<4, 4>(0., -1., 0., 0., 1., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.);
+	Eigen::Matrix<double, 4, 4> const affine_transformation_reflect = make_matrix<4, 4>(-1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.);
+	Eigen::Matrix<double, 4, 4> const affine_transformation_base_to_image_center =
+	    make_matrix<4, 4>(1. * scaling, 0., 0., display_width / 2., 0., 1. * scaling, 0., display_height / 2., 0., 0., 1. * scaling, 0., 0., 0., 0., 1.) * affine_transformation_rotate_90 * affine_transformation_reflect;
 	Eigen::Matrix<double, 4, 4> const affine_transformation_utm_to_image_center = affine_transformation_base_to_image_center * config.affine_transformation_map_origin_to_bases.at(base_name) * config.affine_transformation_utm_to_map_origin;
 
 	cv::Mat view(display_height, display_width, CV_8UC3, cv::Scalar(255, 255, 255));  // Declaring a white matrix

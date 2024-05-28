@@ -45,6 +45,7 @@ target_link_libraries(${PROJECT_NAME}
         Eigen3::Eigen
         ${Boost_LIBRARIES}
         CvPlot
+        autodiff::autodiff
 )
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")

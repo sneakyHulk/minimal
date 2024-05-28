@@ -1,3 +1,4 @@
+#include <common_literals.h>
 #include <ecal/ecal.h>
 #include <ecal/msg/flatbuffers/subscriber.h>
 #include <flatbuffers/flatbuffers.h>
@@ -38,7 +39,17 @@ int main(int argc, char** argv) {
 			for (auto const e : *object_list->object()) {
 				Eigen::Vector4d const position = utm_to_image * make_matrix<4, 1>(e->position()->operator[](0), e->position()->operator[](1), e->position()->operator[](2), 1.);
 
-				cv::circle(tmp, cv::Point(static_cast<int>(position(0)), static_cast<int>(position(1))), 1, cv::Scalar(255, 0, 0), 5);
+				cv::Scalar color;
+				switch (e->object_class()) {
+					case 0_u8: color = cv::Scalar(0, 0, 255); break;
+					case 1_u8: color = cv::Scalar(0, 0, 150); break;
+					case 2_u8: color = cv::Scalar(255, 0, 0); break;
+					case 3_u8: color = cv::Scalar(150, 0, 0); break;
+					case 5_u8: color = cv::Scalar(0, 150, 0); break;
+					case 7_u8: color = cv::Scalar(0, 255, 0); break;
+					default: throw;
+				}
+				cv::circle(tmp, cv::Point(static_cast<int>(position(0)), static_cast<int>(position(1))), 1, color, 5);
 			}
 
 			cv::imshow("display", tmp);

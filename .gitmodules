@@ -16,3 +16,6 @@
 [submodule "thirdparty/cvplot"]
 	path = thirdparty/cvplot
 	url = https://github.com/Profactor/cv-plot.git
+[submodule "thirdparty/autodiff"]
+	path = thirdparty/autodiff
+	url = https://github.com/autodiff/autodiff.git
