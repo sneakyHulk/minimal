@@ -56,8 +56,8 @@ RUN apt-get update \
 # 3. Line enables multi-bufferfing mode, to relax the publisher needs to wait for the subscriber to release the buffer.
 # currently 5 buffer, number of buffers can be increased, but need more RAM
 RUN awk -F"=" '/^network_enabled/{$2="= true"}1' /etc/ecal/ecal.ini | \
-    awk -F"=" '/^memfile_zero_copy/{$2="= 1"}1' > /etc/ecal/ecal.tmp | \
-    awk -F"=" '/^memfile_buffer_count/{$2="= 5"}1' > /etc/ecal/ecal.tmp && \
+    awk -F"=" '/^memfile_zero_copy/{$2="= 1"}1' | \
+    awk -F"=" '/^memfile_buffer_count/{$2="= 10"}1' > /etc/ecal/ecal.tmp && \
 	rm /etc/ecal/ecal.ini && \
 	mv /etc/ecal/ecal.tmp /etc/ecal/ecal.ini
 

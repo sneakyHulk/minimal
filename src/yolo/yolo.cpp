@@ -8,6 +8,7 @@
 #include <torch/torch.h>
 
 #include <filesystem>
+#include <iomanip>
 #include <iostream>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -290,6 +291,11 @@ int main(int argc, char** argv) {
 			} catch (const c10::Error& e) {
 				common::println(e.msg());
 			}
+
+			common::println("source: ", std::setw(15), image->source()->str(), " took ",
+			    std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::nanoseconds(std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - image->timestamp()))
+			        .count(),
+			    "ms ");
 
 			// common::println("Time taken = ", (std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - image->timestamp()) / 1000000, " ms");
 		}

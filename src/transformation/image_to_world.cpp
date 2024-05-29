@@ -6,6 +6,7 @@
 #include <eigen3/Eigen/Eigen>
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
 #include <map>
 #include <nlohmann/json.hpp>
 #include <regex>
@@ -38,18 +39,22 @@ int main(int argc, char** argv) {
 		flatbuffers::FlatBufferBuilder msg;
 
 		if (detection2d_list_subscriber.Receive(msg)) {
-			auto detection2d_list(GetDetection2DList(msg.GetBufferPointer()));
+			auto detection2d_list = GetDetection2DList(msg.GetBufferPointer());
+
+			if (!detection2d_list->object()) {
+				common::println("No Detections found!");
+				continue;
+			}
 
 			CompactObjectListT object_list;
 			for (auto e : *detection2d_list->object()) {
-				std::array not_implemented{std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()};
+				std::array<double, 3> not_implemented{std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity()};
 
-				auto center_position_eigen = config.affine_transformation_map_origin_to_utm * config.affine_transformation_bases_to_map_origin.at(config.camera_config.at(detection2d_list->source()->str()).base_name) *
-				                             config.camera_config.at(detection2d_list->source()->str()).image_to_world((e->bbox().left() + e->bbox().right()) / 2.f, (e->bbox().top() + e->bbox().bottom()) / 2.f, 0.f);
-				std::array center_position = {static_cast<float>(center_position_eigen[0]), static_cast<float>(center_position_eigen[1]), static_cast<float>(center_position_eigen[2])};
+				Eigen::Vector4d const center_position_eigen = config.affine_transformation_map_origin_to_utm * config.affine_transformation_bases_to_map_origin.at(config.camera_config.at(detection2d_list->source()->str()).base_name) *
+				                                              config.camera_config.at(detection2d_list->source()->str()).image_to_world((e->bbox().left() + e->bbox().right()) / 2.f, (e->bbox().top() + e->bbox().bottom()) / 2.f, 0.f);
+				std::array<double, 3> center_position = {center_position_eigen(0), center_position_eigen(1), center_position_eigen(2)};
 
-				CompactObject object(0, e->object_class(), center_position, not_implemented, not_implemented, 0., 0., not_implemented, not_implemented);
-				object_list.object.push_back(object);
+				object_list.object.emplace_back(0, e->object_class(), center_position, not_implemented, not_implemented, 0., 0., not_implemented, not_implemented);
 			}
 
 			object_list.timestamp = detection2d_list->timestamp();
@@ -60,8 +65,9 @@ int main(int argc, char** argv) {
 
 			object_list_publisher.Send(builder, -1);
 
-			common::println("Time taken = ", std::chrono::duration_cast<std::chrono::milliseconds>(
-			                                     std::chrono::nanoseconds(std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - detection2d_list->timestamp())));
+			common::println("source: ", std::setw(15), detection2d_list->source()->str(), " took ",
+			    std::chrono::duration_cast<std::chrono::milliseconds>(
+			        std::chrono::nanoseconds(std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - detection2d_list->timestamp())));
 		}
 	}
 
