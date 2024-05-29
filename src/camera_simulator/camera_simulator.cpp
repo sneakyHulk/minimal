@@ -26,26 +26,28 @@ int main(int argc, char** argv) {
 	common::println("Dealing with ", files.size(), " files!");
 
 	std::sort(files.begin(), files.end(), [](auto const& e1, auto const& e2) { return e1.path().stem() < e2.path().stem(); });
-	for (auto const& entry : files) {
-		cv::Mat image_read = cv::imread(entry.path(), cv::IMREAD_COLOR);
-		std::chrono::time_point<std::chrono::system_clock> next(std::chrono::milliseconds(std::stoll(entry.path().stem())));  // image name in microseconds
-		static auto images_time = next;
-		static auto current_time = std::chrono::system_clock::now();
+	while (!signal_handler::gSignalStatus) {
+		for (auto const& entry : files) {
+			cv::Mat image_read = cv::imread(entry.path(), cv::IMREAD_COLOR);
+			std::chrono::time_point<std::chrono::system_clock> next(std::chrono::milliseconds(std::stoll(entry.path().stem())));  // image name in microseconds
+			static auto images_time = next;
+			static auto current_time = std::chrono::system_clock::now();
 
-		std::this_thread::sleep_until(current_time + (next - images_time));
+			std::this_thread::sleep_until(current_time + (next - images_time));
 
-		ImageT image;
-		image.timestamp = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
-		image.width = image_read.cols;
-		image.height = image_read.rows;
-		image.source = entry.path().parent_path().parent_path().filename();
-		image.mat = {image_read.data, image_read.data + (image_read.total() * image_read.elemSize())};
+			ImageT image;
+			image.timestamp = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+			image.width = image_read.cols;
+			image.height = image_read.rows;
+			image.source = entry.path().parent_path().parent_path().filename();
+			image.mat = {image_read.data, image_read.data + (image_read.total() * image_read.elemSize())};
 
-		flatbuffers::FlatBufferBuilder builder;
-		builder.Finish(Image::Pack(builder, &image));
+			flatbuffers::FlatBufferBuilder builder;
+			builder.Finish(Image::Pack(builder, &image));
 
-		image_publisher.Send(builder, -1);
-		if (signal_handler::gSignalStatus) break;
+			image_publisher.Send(builder, -1);
+			if (signal_handler::gSignalStatus) break;
+		}
 	}
 
 	return 0;
