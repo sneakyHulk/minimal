@@ -17,6 +17,10 @@
 
 #include "Config.h"
 
+#if !__cpp_lib_ranges_zip
+#include "transformation/zip-view.h"
+#endif
+
 std::random_device rd;
 std::mt19937 gen(rd());
 std::uniform_int_distribution<> dis(0, 255);
@@ -95,7 +99,7 @@ void draw_camera_fov(cv::Mat& view, Config const& config, std::string const& cam
 			derivates.push_back(dy);
 		}
 		left_padding = static_cast<int>(std::distance(derivates.begin(), std::max_element(derivates.begin(), derivates.end(), [](double a, double b) { return std::fabs(a) < std::fabs(b); })));
-		left_padding *= 2; // more distance to the singularity
+		left_padding *= 2;  // more distance to the singularity
 	}
 
 	int right_padding = 0;
@@ -111,7 +115,7 @@ void draw_camera_fov(cv::Mat& view, Config const& config, std::string const& cam
 			derivates.push_back(dy);
 		}
 		right_padding = static_cast<int>(std::distance(derivates.begin(), std::max_element(derivates.begin(), derivates.end(), [](double const a, double const b) { return std::fabs(a) < std::fabs(b); })));
-		right_padding *= 2; // more distance to the singularity
+		right_padding *= 2;  // more distance to the singularity
 	}
 
 	common::println(camera_name, ": left_padding: ", left_padding, ", right_padding: ", right_padding);
@@ -201,7 +205,13 @@ auto draw_map(std::filesystem::path odr_map, Config const& config, std::string c
 
 				cv::Scalar black_color(0, 0, 0);
 
-				for (auto const [start, end] : lane_border | std::ranges::views::adjacent<2>) {
+#if __cpp_lib_ranges_zip
+				auto adjacent_range = lane_border | std::ranges::views::adjacent<2>;
+#else
+				auto adjacent_range = c9::zip(lane_border | std::ranges::views::take(lane_border.size() - 1), lane_border | std::ranges::views::drop(1));
+#endif
+
+				for (auto const [start, end] : adjacent_range) {
 					Eigen::Vector4d start_;
 					start_ << start[0], start[1], start[2], 1.;
 					Eigen::Vector4d end_;
