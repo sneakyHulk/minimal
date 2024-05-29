@@ -60,7 +60,8 @@ int main(int argc, char** argv) {
 
 			object_list_publisher.Send(builder, -1);
 
-			common::println("Time taken = ", (std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - detection2d_list->timestamp()) / 1000000, " ms");
+			common::println("Time taken = ", std::chrono::duration_cast<std::chrono::milliseconds>(
+			                                     std::chrono::nanoseconds(std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - detection2d_list->timestamp())));
 		}
 	}
 
