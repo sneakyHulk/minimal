@@ -38,7 +38,7 @@ services:
     profiles: [ "rocm-torch", "yolo-rocm-torch" ]
   ##### run pubsub examples (uses cpu version) #########################################################################
   sub:
-    image: minimal_cpu:latest
+    image: minimal-cpu:latest
     depends_on:
       - cpu-build
     container_name: sub
@@ -52,7 +52,7 @@ services:
     pid: host
     profiles: [ "pubsub" ]
   pub:
-    image: minimal_cpu:latest
+    image: minimal-cpu:latest
     depends_on:
       - cpu-build
     container_name: pub
@@ -66,7 +66,7 @@ services:
     pid: host
     profiles: [ "pubsub" ]
   python_sub:
-    image: minimal_cpu:latest
+    image: minimal-cpu:latest
     depends_on:
       - cpu-build
     container_name: python_sub

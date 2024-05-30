@@ -44,7 +44,6 @@ target_link_libraries(${PROJECT_NAME}
         OpenDrive
         Eigen3::Eigen
         ${Boost_LIBRARIES}
-        CvPlot
         autodiff::autodiff
 )
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)

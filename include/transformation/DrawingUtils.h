@@ -1,6 +1,5 @@
 #pragma once
 
-#include <CvPlot/cvplot.h>
 #include <OpenDriveMap.h>
 #include <common_output.h>
 
@@ -8,9 +7,6 @@
 #include <algorithm>
 #include <autodiff/reverse/var.hpp>
 #include <autodiff/reverse/var/eigen.hpp>
-#include <boost/geometry.hpp>
-#include <boost/geometry/algorithms/is_convex.hpp>
-#include <boost/geometry/geometries/ring.hpp>
 #include <opencv2/opencv.hpp>
 #include <random>
 #include <ranges>
@@ -24,38 +20,6 @@
 std::random_device rd;
 std::mt19937 gen(rd());
 std::uniform_int_distribution<> dis(0, 255);
-
-namespace boost::geometry::traits {
-	template <>
-	struct tag<Eigen::Matrix<double, 4, 1>> {
-		typedef point_tag type;
-	};
-
-	template <>
-	struct coordinate_type<Eigen::Matrix<double, 4, 1>> {
-		typedef double type;
-	};
-
-	template <>
-	struct coordinate_system<Eigen::Matrix<double, 4, 1>> {
-		typedef cs::cartesian type;
-	};
-
-	template <>
-	struct dimension<Eigen::Matrix<double, 4, 1>> : boost::mpl::int_<2> {};
-
-	template <>
-	struct access<Eigen::Matrix<double, 4, 1>, 0> {
-		static double get(Eigen::Matrix<double, 4, 1> const& p) { return p(0); }
-		static void set(Eigen::Matrix<double, 4, 1>& p, double const& value) { p(0) = value; }
-	};
-
-	template <>
-	struct access<Eigen::Matrix<double, 4, 1>, 1> {
-		static double get(Eigen::Matrix<double, 4, 1> const& p) { return p(1); }
-		static void set(Eigen::Matrix<double, 4, 1>& p, double const& value) { p(1) = value; }
-	};
-}  // namespace boost::geometry::traits
 
 [[nodiscard]] autodiff::Vector4var image_to_world(double x, autodiff::var y, double height, CameraConfig const& config) {
 	autodiff::Vector3var image_coordinates;
@@ -119,55 +83,6 @@ void draw_camera_fov(cv::Mat& view, Config const& config, std::string const& cam
 	}
 
 	common::println(camera_name, ": left_padding: ", left_padding, ", right_padding: ", right_padding);
-
-	//// To see the singulatities:
-
-	//	std::max_element(.begin(), .end(), [](const int& a, const int& b)
-	//	{
-	//    return abs(a) < abs(b);
-	//});
-
-	// std::vector<double> x(config.camera_config.at(camera_name).image_height), y(x.size()), y2(x.size());
-	// for (auto i = 0; i < x.size(); ++i) {
-	//	Eigen::Matrix<double, 4, 1> const test = affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(0., i, 0.);
-	//
-	//	y_coordinate.update(i);
-	//	test2(1).update();
-	//	auto [t] = autodiff::derivatives(test2(1), autodiff::wrt(y_coordinate));
-	//
-	//	x[i] = i;
-	//	y[i] = test(1);
-	//	y2[i] = t;
-	//}
-	//
-	// auto axes = CvPlot::makePlotAxes();
-	// axes.create<CvPlot::Series>(x, y2, "-g");
-	//
-	// cv::Mat mat = axes.render(300, 400);
-	// CvPlot::show("mywindow", axes);
-
-	// while (true) {
-	//	Eigen::Matrix<double, 4, 1> const left_top = affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(0., padding, 0.);
-	//	Eigen::Matrix<double, 4, 1> const right_top = affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(config.camera_config.at(camera_name).image_width, padding, 0.);
-	//
-	//	boost::geometry::model::ring<Eigen::Matrix<double, 4, 1>> r;
-	//	boost::geometry::append(r, left_bottom);
-	//	boost::geometry::append(r, left_top);
-	//	boost::geometry::append(r, right_top);
-	//	boost::geometry::append(r, right_bottom);
-	//
-	//	if (boost::geometry::is_convex(r)) {
-	//		padding *= 1.5;  // to be further away from the singularities
-	//		break;
-	//	}
-	//
-	//	if (!padding) {
-	//		common::println("Camera '", camera_name, "' has pixel which lay in the sky. Computation of a 2D point with these is impossible!");
-	//	}
-	//
-	//	++padding;
-	//}
-	// padding += 10;
 
 	Eigen::Matrix<double, 4, 1> const left_top = affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(0., left_padding, 0.);
 	Eigen::Matrix<double, 4, 1> const right_top = affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(config.camera_config.at(camera_name).image_width, right_padding, 0.);
