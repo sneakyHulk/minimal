@@ -23,12 +23,6 @@
 #include "transformation/EigenUtils.h"
 
 int main(int argc, char** argv) {
-	system("printenv");
-	cv::Mat view(1000, 1000, CV_8UC3, cv::Scalar(255, 255, 255));  // Declaring a white matrix
-
-	cv::imshow("display", view);
-	cv::waitKey(0);
-
 	eCAL_RAII ecal_raii(argc, argv);
 	signal_handler();
 

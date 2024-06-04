@@ -80,7 +80,8 @@ if __name__ == "__main__":
 
     show_point(
         "/Users/lukas/src/2023-07-26/runs_videtec/run_3_undistorted/s110_n_cam_8/s110_n_cam_8_images/1690366190031.jpg",
-        image_to_world([636.5, 229.5], projection_matrix_s110_n_cam_8, 0), projection_matrix_s110_n_cam_8, [636.5, 229.5])
+        image_to_world([636.5, 229.5], projection_matrix_s110_n_cam_8, 0), projection_matrix_s110_n_cam_8,
+        [636.5, 229.5])
 
     show_point(
         "/Users/lukas/src/2023-07-26/runs_videtec/run_3_undistorted/s110_n_cam_8/s110_n_cam_8_images/1690366190031.jpg",

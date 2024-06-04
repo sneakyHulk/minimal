@@ -21,31 +21,14 @@ std::random_device rd;
 std::mt19937 gen(rd());
 std::uniform_int_distribution<> dis(0, 255);
 
-[[nodiscard]] autodiff::Vector4var image_to_world(double x, autodiff::var y, double height, CameraConfig const& config) {
-	autodiff::Vector3var image_coordinates;
-	image_coordinates << x, y, 1.0;
-
-	autodiff::Vector3var tmp1 = config.KR_inv * image_coordinates;
-	autodiff::Vector3var tmp2 = tmp1 * (height - config.translation_camera(2)) / tmp1(2);
-	autodiff::Vector3var tmp3 = tmp2 + config.translation_camera;
-
-	autodiff::Vector4var ret;
-	ret(0) = tmp3(0);
-	ret(1) = tmp3(1);
-	ret(2) = tmp3(2);
-	ret(3) = 1.;
-
-	return ret;
-}
-
 void draw_camera_fov(cv::Mat& view, Config const& config, std::string const& camera_name, Eigen::Matrix<double, 4, 4> const& affine_transformation_base_to_image_center) {
 	std::seed_seq seq(camera_name.begin(), camera_name.end());
 	std::mt19937 rng(seq);
 	std::uniform_int_distribution<> dis(0, 255);
 
-	Eigen::Matrix<double, 4, 1> const left_bottom = affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(0., config.camera_config.at(camera_name).image_height, 0.);
+	Eigen::Matrix<double, 4, 1> const left_bottom = affine_transformation_base_to_image_center * config.map_image_to_world_coordinate<double>(camera_name, 0., config.camera_config(camera_name).image_height(), 0.);
 	Eigen::Matrix<double, 4, 1> const right_bottom =
-	    affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(config.camera_config.at(camera_name).image_width, config.camera_config.at(camera_name).image_height, 0.);
+	    affine_transformation_base_to_image_center * config.map_image_to_world_coordinate<double>(camera_name, config.camera_config(camera_name).image_width(), config.camera_config(camera_name).image_height(), 0.);
 
 	// The padding of the top y coordinators is necessary because if the camera points to the sky, it is no longer possible to compute a 2D point from it (singularity).
 	// Testing different paddings:
@@ -53,10 +36,10 @@ void draw_camera_fov(cv::Mat& view, Config const& config, std::string const& cam
 	int left_padding = 0;
 	{
 		autodiff::var y = 0;
-		autodiff::Vector4var left_top = affine_transformation_base_to_image_center * image_to_world(0., y, 0., config.camera_config.at(camera_name));
+		autodiff::Vector4var left_top = affine_transformation_base_to_image_center * config.map_image_to_world_coordinate<autodiff::var>(camera_name, 0., y, 0.);
 
 		std::vector<double> derivates;
-		for (auto padding = 0; padding < config.camera_config.at(camera_name).image_height; ++padding) {
+		for (auto padding = 0; padding < config.camera_config(camera_name).image_height(); ++padding) {
 			y.update(padding);
 			left_top(1).update();
 			auto [dy] = autodiff::derivatives(left_top(1), autodiff::wrt(y));
@@ -69,10 +52,10 @@ void draw_camera_fov(cv::Mat& view, Config const& config, std::string const& cam
 	int right_padding = 0;
 	{
 		autodiff::var y = 0;
-		autodiff::Vector4var right_top = affine_transformation_base_to_image_center * image_to_world(config.camera_config.at(camera_name).image_width, y, 0., config.camera_config.at(camera_name));
+		autodiff::Vector4var right_top = affine_transformation_base_to_image_center * config.map_image_to_world_coordinate<autodiff::var>(camera_name, config.camera_config(camera_name).image_width(), y, 0.);
 
 		std::vector<double> derivates;
-		for (auto padding = 0; padding < config.camera_config.at(camera_name).image_height; ++padding) {
+		for (auto padding = 0; padding < config.camera_config(camera_name).image_height(); ++padding) {
 			y.update(padding);
 			right_top(1).update();
 			auto [dy] = autodiff::derivatives(right_top(1), autodiff::wrt(y));
@@ -84,8 +67,10 @@ void draw_camera_fov(cv::Mat& view, Config const& config, std::string const& cam
 
 	common::println(camera_name, ": left_padding: ", left_padding, ", right_padding: ", right_padding);
 
-	Eigen::Matrix<double, 4, 1> const left_top = affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(0., left_padding, 0.);
-	Eigen::Matrix<double, 4, 1> const right_top = affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(config.camera_config.at(camera_name).image_width, right_padding, 0.);
+	// Eigen::Matrix<double, 4, 1> const left_top = affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(0., left_padding, 0.);
+	Eigen::Matrix<double, 4, 1> const left_top = affine_transformation_base_to_image_center * config.map_image_to_world_coordinate<double>(camera_name, 0., left_padding, 0.);
+	// Eigen::Matrix<double, 4, 1> const right_top = affine_transformation_base_to_image_center * config.camera_config.at(camera_name).image_to_world(config.camera_config.at(camera_name).image_width, right_padding, 0.);
+	Eigen::Matrix<double, 4, 1> const right_top = affine_transformation_base_to_image_center * config.map_image_to_world_coordinate<double>(camera_name, config.camera_config(camera_name).image_width(), right_padding, 0.);
 
 	auto overlay = view.clone();
 
@@ -107,7 +92,7 @@ auto draw_map(std::filesystem::path odr_map, Config const& config, std::string c
 	Eigen::Matrix<double, 4, 4> const affine_transformation_reflect = make_matrix<4, 4>(-1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.);
 	Eigen::Matrix<double, 4, 4> const affine_transformation_base_to_image_center =
 	    make_matrix<4, 4>(1. * scaling, 0., 0., display_width / 2., 0., 1. * scaling, 0., display_height / 2., 0., 0., 1. * scaling, 0., 0., 0., 0., 1.) * affine_transformation_rotate_90 * affine_transformation_reflect;
-	Eigen::Matrix<double, 4, 4> const affine_transformation_utm_to_image_center = affine_transformation_base_to_image_center * config.affine_transformation_map_origin_to_bases.at(base_name) * config.affine_transformation_utm_to_map_origin;
+	Eigen::Matrix<double, 4, 4> const affine_transformation_utm_to_image_center = affine_transformation_base_to_image_center * config.affine_transformation_map_origin_to_bases(base_name) * config.affine_transformation_utm_to_map_origin();
 
 	cv::Mat view(display_height, display_width, CV_8UC3, cv::Scalar(255, 255, 255));  // Declaring a white matrix
 

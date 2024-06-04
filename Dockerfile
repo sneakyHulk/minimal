@@ -23,6 +23,8 @@ RUN apt-get update \
     && test -f /usr/share/doc/kitware-archive-keyring/copyright || rm /usr/share/keyrings/kitware-archive-keyring.gpg \
     && DEBIAN_FRONTEND=noninteractive \
        apt-get -y --quiet --no-install-recommends install \
+       gcc-12 \
+       g++-12 \
        ecal \
        kitware-archive-keyring \
        cmake \

@@ -79,6 +79,7 @@ int main() {
 	// Eigen::Matrix<double, 4, 4> test;
 	Eigen::Matrix4d test;
 	test << 0., -4., 0., 960., -4., 0., 0., 600., 0., 0., 4., 0., 0., 0., 0., 1.;
+
 	autodiff::Vector4var e;
 	e << 1., 3000., 333., 4.;
 
@@ -88,8 +89,6 @@ int main() {
 	e(1).update(200.);
 	erg(0).update();
 	auto [ux2] = autodiff::derivatives(erg(0), autodiff::wrt(e(1)));
-
-
 
 	// auto dudx = autodiff::derivative(erg, autodiff::wrt(e(1)), autodiff::at(e(1)));  // evaluate the derivative du/dx
 	//  auto dudx2 = autodiff::derivative(erg, autodiff::wrt(e(0)), autodiff::at(e));  // evaluate the derivative du/dx

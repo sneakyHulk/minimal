@@ -19,3 +19,6 @@
 [submodule "thirdparty/autodiff"]
 	path = thirdparty/autodiff
 	url = https://github.com/autodiff/autodiff.git
+[submodule "thirdparty/json"]
+	path = thirdparty/json
+	url = https://github.com/nlohmann/json.git
