@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
 	boost::circular_buffer<std::pair<std::int64_t, std::vector<std::tuple<int, int, cv::Scalar>>>> drawing_fifo(20);
 
 	Config config = make_config();
-	auto const [map, utm_to_image] = draw_map(std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("2021-07-07_1490_Providentia_Plus_Plus_1_6.xodr"), config);
+	auto const [map, utm_to_image] = draw_map(std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("data/visualization/2021-07-07_1490_Providentia_Plus_Plus_1_6.xodr"), config);
 
 	cv::imshow("display", map);
 	cv::waitKey(100);
