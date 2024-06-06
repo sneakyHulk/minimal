@@ -51,10 +51,9 @@ int main(int argc, char** argv) {
 			for (auto e : *detection2d_list->object()) {
 				std::array<double, 3> not_implemented{std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity()};
 
-				cv::Point2d tmp = {(e->bbox().left() + e->bbox().right()) / 2., (e->bbox().top() + e->bbox().bottom()) / 2.};
-				auto out = config.undistort_points(detection2d_list->source()->str(), {tmp});
+				auto const [x, y] = config.undistort_point(detection2d_list->source()->str(), (e->bbox().left() + e->bbox().right()) / 2., (e->bbox().top() + e->bbox().bottom()) / 2.);
 				Eigen::Vector4d const center_position_eigen = config.affine_transformation_map_origin_to_utm() * config.affine_transformation_bases_to_map_origin(config.camera_config(detection2d_list->source()->str()).base_name()) *
-				                                              config.map_image_to_world_coordinate<double>(detection2d_list->source()->str(), out[0].x, out[0].y, 0.f);
+				                                              config.map_image_to_world_coordinate<double>(detection2d_list->source()->str(), x, y, 0.f);
 				std::array<double, 3> center_position = {center_position_eigen(0), center_position_eigen(1), center_position_eigen(2)};
 
 				object_list.object.emplace_back(0, e->object_class(), center_position, not_implemented, not_implemented, 0., 0., not_implemented, not_implemented);

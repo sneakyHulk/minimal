@@ -1,5 +1,6 @@
 #pragma once
 #include <Eigen/Eigen>
+#include <concepts>
 
 template <std::size_t rows, std::size_t cols, typename T1, typename... T>
 static Eigen::Matrix<double, rows, cols> make_matrix(T1 const& first, T const&... other) {

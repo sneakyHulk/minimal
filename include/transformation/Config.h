@@ -65,6 +65,15 @@ struct Config {
 
 		return out;
 	}
+
+	[[nodiscard]] std::tuple<double, double> undistort_point(std::string const& camera_name, double const x, double const y) const {
+		std::vector<cv::Point2d> out(1);
+		std::vector<cv::Point2d> distorted_point = {{x, y}};
+
+		cv::undistortPoints(distorted_point, out, lens_config(camera_name).camera_matrix(), lens_config(camera_name).distortion_values(), cv::Mat_<double>::eye(3, 3), new_camera_matrix(camera_name));
+
+		return {out.front().x, out.front().y};
+	}
 };
 
 Config make_config(std::filesystem::path const config_directory = std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("thirdparty/projection_library/config"), double const map_origin_x = 695942.4856864865,
