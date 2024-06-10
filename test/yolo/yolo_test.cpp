@@ -203,7 +203,7 @@ int main() {
 	    "dining table", "toilet", "tv", "laptop", "mouse", "remote", "keyboard", "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush"};
 
 	try {
-		std::string model_path = std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("yolov9c.torchscript");
+		std::string model_path = std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("data/yolo") / std::filesystem::path("yolov8m.torchscript");
 		torch::jit::script::Module yolo_model;
 		yolo_model = torch::jit::load(model_path, device);
 		yolo_model.eval();

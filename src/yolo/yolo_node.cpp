@@ -214,7 +214,7 @@ int main(int argc, char** argv) {
 
 	torch::jit::script::Module yolo_model;
 	try {
-		std::string model_path = std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("yolov9c.torchscript");
+		std::string model_path = std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("data/yolo") / std::filesystem::path("yolov8s.torchscript");
 		yolo_model = torch::jit::load(model_path, device);
 		yolo_model.eval();
 	} catch (const c10::Error& e) {

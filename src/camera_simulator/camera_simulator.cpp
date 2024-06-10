@@ -21,8 +21,9 @@ int main(int argc, char** argv) {
 	eCAL::flatbuffers::CPublisher<flatbuffers::FlatBufferBuilder> image_publisher("image");
 	image_publisher.ShmEnableZeroCopy(true);
 
-	std::vector files(std::filesystem::recursive_directory_iterator(std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("data")), {});
+	std::vector files(std::filesystem::recursive_directory_iterator(std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("data/camera_simulator")), {});
 	files.erase(std::remove_if(files.begin(), files.end(), [](auto const& e) { return e.path().extension() != ".jpg"; }), files.end());
+	files.erase(std::remove_if(files.begin(), files.end(), [](auto const& e) { return e.path().generic_string().find("_distorted") == std::string::npos; }), files.end());
 	common::println("Dealing with ", files.size(), " files!");
 
 	std::sort(files.begin(), files.end(), [](auto const& e1, auto const& e2) { return e1.path().stem() < e2.path().stem(); });
