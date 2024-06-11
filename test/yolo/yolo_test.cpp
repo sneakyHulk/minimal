@@ -203,13 +203,13 @@ int main() {
 	    "dining table", "toilet", "tv", "laptop", "mouse", "remote", "keyboard", "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush"};
 
 	try {
-		std::string model_path = std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("data/yolo") / std::filesystem::path("yolov8m.torchscript");
+		std::string model_path = std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("data/yolo") / std::filesystem::path("yolov8s.torchscript");
 		torch::jit::script::Module yolo_model;
 		yolo_model = torch::jit::load(model_path, device);
 		yolo_model.eval();
 
 		// Load image and preprocess
-		cv::Mat image = cv::imread(std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("data/camera_simulator/s110_w_cam_8/s110_w_cam_8_images/1690366213555.jpg"));
+		cv::Mat image = cv::imread(std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("data/camera_simulator/s110_w_cam_8/s110_w_cam_8_images/1690366195354.jpg"));
 		cv::Mat input_image;
 		letterbox(image, input_image, {640, 640});
 

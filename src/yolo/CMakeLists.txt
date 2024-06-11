@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.28)
 
 project(yolo)
 
+set(TORCH_CUDA_ARCH_LIST "8.0 8.6 8.9 9.0") # new CUDA arch is 9.0a, therefore the CAFFE2 regex failed, uff
 set(CMAKE_CXX_STANDARD 20)
 #set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_CXX_EXTENSIONS OFF)
@@ -14,7 +15,7 @@ if (IS_DIRECTORY ${HOME_DIRECTORY}/src/libtorch)
     message("${TORCH_LIBRARIES}")
     message("${TORCH_INCLUDE_DIRS}")
 endif ()
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
 add_library(${PROJECT_NAME} INTERFACE)
 target_include_directories(${PROJECT_NAME} INTERFACE ${CMAKE_SOURCE_DIR}/include/${CURRENT_DIR})
@@ -25,7 +26,6 @@ target_link_libraries(${PROJECT_NAME} INTERFACE
 )
 target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_23)
 target_compile_definitions(${PROJECT_NAME} INTERFACE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
-
 
 ##### yolo_node ########################################################################################################
 

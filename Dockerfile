@@ -75,7 +75,7 @@ RUN if [ "$src" = "cpu-torch" ]; then \
         python3 -m pip install --index-url https://download.pytorch.org/whl/cpu -r requirements_torch.txt \
         && python3 -m pip install --index-url https://pypi.python.org/simple -r requirements_yolo.txt \
         && if [ "$BUILDPLATFORM" = "linux/amd642" ]; then \
-              wget -c https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.3.0%2Bcpu.zip --output-document libtorch.zip \
+              wget -c https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.3.1%2Bcpu.zip --output-document libtorch.zip \
               && unzip libtorch.zip -d ~/src; \
            else \
               git clone --recurse-submodules -j8 https://github.com/pytorch/pytorch.git \
@@ -104,12 +104,12 @@ RUN if [ "$src" = "cpu-torch" ]; then \
     elif [ "$src" = "cuda-torch" ]; then \
         python3 -m pip install --index-url https://download.pytorch.org/whl/cu121 -r requirements_torch.txt \
         && python3 -m pip install --index-url https://pypi.python.org/simple -r requirements_yolo.txt \
-        && wget -c https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-2.3.0%2Bcu121.zip --output-document libtorch.zip \
+        && wget -c https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-2.3.1%2Bcu121.zip --output-document libtorch.zip \
         && unzip libtorch.zip -d ~/src; \
     elif [ "$src" = "rocm-torch" ]; then \
         python3 -m pip install --index-url https://download.pytorch.org/whl/rocm6.0 -r requirements_torch.txt \
         && python3 -m pip install --index-url https://pypi.python.org/simple -r requirements_yolo.txt \
-        && wget -c https://download.pytorch.org/libtorch/rocm6.0/libtorch-cxx11-abi-shared-with-deps-2.3.0%2Brocm6.0.zip --output-document libtorch.zip \
+        && wget -c https://download.pytorch.org/libtorch/rocm6.0/libtorch-cxx11-abi-shared-with-deps-2.3.1%2Brocm6.0.zip --output-document libtorch.zip \
         && unzip libtorch.zip -d ~/src; \
     fi
 
