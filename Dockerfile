@@ -3,7 +3,8 @@ ARG src=cpu
 
 FROM --platform=$BUILDPLATFORM ubuntu:jammy AS cpu-base
 FROM --platform=$BUILDPLATFORM ubuntu:jammy AS cpu-torch-base
-FROM --platform=$BUILDPLATFORM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04 AS cuda-torch-base
+FROM --platform=$BUILDPLATFORM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04 AS cuda-torch-base
+#nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04
 FROM --platform=$BUILDPLATFORM rocm/dev-ubuntu-22.04:6.0-complete AS rocm-torch-base
 
 FROM ${src}-base AS image
@@ -114,4 +115,6 @@ RUN if [ "$src" = "cpu-torch" ]; then \
     fi
 
 ENV PYTHONPATH "${PYTHONPATH}:/src"
+ENV CC gcc-12
+ENV CXX g++-12
 WORKDIR /src

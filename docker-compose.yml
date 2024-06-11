@@ -103,7 +103,7 @@ services:
     volumes:
       - .:/src:ro
       - /etc/timezone:/etc/timezone:ro
-    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target camera_simulator_flatbuffers -j 4 && src/camera_simulator/camera_simulator_flatbuffers"
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target camera_simulator -j 4 && src/camera_simulator/camera_simulator"
     stop_signal: SIGTERM
     network_mode: host
     ipc: host
@@ -117,7 +117,7 @@ services:
     volumes:
       - .:/src:ro
       - /etc/timezone:/etc/timezone:ro
-    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target yolo -j 8 && src/yolo/yolo"
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release -DCAFFE2_USE_CUDNN=True /src && cmake --build . --target yolo_node -j 8 && src/yolo/yolo_node"
     stop_signal: SIGTERM
     network_mode: host
     ipc: host
@@ -138,7 +138,7 @@ services:
       - seccomp:unconfined
     group_add:
       - video
-    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target yolo -j 8 && src/yolo/yolo"
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target yolo_node -j 8 && src/yolo/yolo_node"
     stop_signal: SIGTERM
     network_mode: host
     ipc: host
@@ -152,7 +152,7 @@ services:
     volumes:
       - .:/src:ro
       - /etc/timezone:/etc/timezone:ro
-    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target yolo -j 8 && src/yolo/yolo"
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target yolo_node -j 8 && src/yolo/yolo_node"
     stop_signal: SIGTERM
     network_mode: host
     ipc: host
@@ -167,7 +167,7 @@ services:
     volumes:
       - .:/src:ro
       - /etc/timezone:/etc/timezone:ro
-    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target image_to_world -j 4 && src/coordinate_transformation/image_to_world"
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target image_to_world -j 4 && src/transformation/image_to_world"
     stop_signal: SIGTERM
     network_mode: host
     ipc: host

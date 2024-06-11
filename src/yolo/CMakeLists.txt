@@ -4,13 +4,13 @@ cmake_minimum_required(VERSION 3.28)
 
 project(yolo)
 
-set(TORCH_CUDA_ARCH_LIST "8.0 8.6 8.9 9.0") # new CUDA arch is 9.0a, therefore the CAFFE2 regex failed, uff
 set(CMAKE_CXX_STANDARD 20)
 #set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(OpenCV REQUIRED)
 if (IS_DIRECTORY ${HOME_DIRECTORY}/src/libtorch)
+    set(TORCH_CUDA_ARCH_LIST "8.0 8.6 8.9 9.0") # new CUDA arch is 9.0a, therefore the CAFFE2 regex failed, uff
     find_package(Torch REQUIRED PATHS ~/src/libtorch NO_DEFAULT_PATH)
     message("${TORCH_LIBRARIES}")
     message("${TORCH_INCLUDE_DIRS}")
