@@ -1,3 +1,4 @@
 yolov9c.torchscript filter=lfs diff=lfs merge=lfs -text
 yolov9e.torchscript filter=lfs diff=lfs merge=lfs -text
 yolov10b.torchscript filter=lfs diff=lfs merge=lfs -text
+data/yolo/yolov8s.torchscript filter=lfs diff=lfs merge=lfs -text
