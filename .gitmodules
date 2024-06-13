@@ -22,3 +22,9 @@
 [submodule "thirdparty/json"]
 	path = thirdparty/json
 	url = https://github.com/nlohmann/json.git
+[submodule "thirdparty/sort"]
+	path = thirdparty/sort
+	url = https://github.com/yasenh/sort-cpp.git
+[submodule "thirdparty/sort-cpp"]
+	path = thirdparty/sort-cpp
+	url = https://github.com/mcximing/sort-cpp.git

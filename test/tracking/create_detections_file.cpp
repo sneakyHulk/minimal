@@ -32,9 +32,10 @@ int main(int argc, char** argv) {
 
 	std::vector<std::tuple<std::pair<std::string, std::int64_t>, std::pair<std::string, std::string>,
 	    std::pair<std::string, std::vector<std::tuple<std::pair<std::string, double>, std::pair<std::string, double>, std::pair<std::string, double>, std::pair<std::string, double>, std::pair<std::string, double>,
-	                               std::pair<std::string, double>, std::pair<std::string, double>, std::pair<std::string, double>>>>>>
+	                               std::pair<std::string, double>, std::pair<std::string, double>, std::pair<std::string, double>, std::pair<std::string, double>>>>>>
 	    data;
 
+	std::int64_t timestamp = 0;
 	while (!signal_handler::gSignalStatus) {
 		flatbuffers::FlatBufferBuilder msg;
 
@@ -47,7 +48,7 @@ int main(int argc, char** argv) {
 			}
 
 			std::vector<std::tuple<std::pair<std::string, double>, std::pair<std::string, double>, std::pair<std::string, double>, std::pair<std::string, double>, std::pair<std::string, double>, std::pair<std::string, double>,
-			    std::pair<std::string, double>, std::pair<std::string, double>>>
+			    std::pair<std::string, double>, std::pair<std::string, double>, std::pair<std::string, double>>>
 			    detections;
 
 			for (auto e : *detection2d_list->object()) {
@@ -62,9 +63,12 @@ int main(int argc, char** argv) {
 				auto E = center_position_eigen(0);
 				auto N = center_position_eigen(1);
 
-				detections.emplace_back(
-				    std::make_pair("x", x), std::make_pair("y", y), std::make_pair("left", left), std::make_pair("top", top), std::make_pair("right", right), std::make_pair("bottom", bottom), std::make_pair("E", E), std::make_pair("N", N));
+				detections.emplace_back(std::make_pair("conf", e->conf()), std::make_pair("x", x), std::make_pair("y", y), std::make_pair("left", left), std::make_pair("top", top), std::make_pair("right", right),
+				    std::make_pair("bottom", bottom), std::make_pair("E", E), std::make_pair("N", N));
 			}
+
+			if (detection2d_list->timestamp() < timestamp) common::println(detection2d_list->timestamp(), " - ", timestamp, " = ", detection2d_list->timestamp() - timestamp);
+			timestamp = detection2d_list->timestamp();
 
 			data.emplace_back(std::make_pair("timestamp", detection2d_list->timestamp()), std::make_pair("src", detection2d_list->source()->str()), std::make_pair("detections", detections));
 
