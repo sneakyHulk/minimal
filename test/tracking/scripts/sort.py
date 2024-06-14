@@ -99,9 +99,10 @@ def diou_batch(bb_test, bb_gt):
             y_center_test - y_center_gt)
 
     print("d2: ", d_2, ", C2: ", C_2, ", d_2 / C_2: ", d_2 / C_2)
-    #diou = np.maximum(0., o - d_2 / C_2)
+    # diou = np.maximum(0., o - d_2 / C_2)
     diou = o - d_2 / C_2
-    print("diou_max: ", diou, ", diou: " , o - d_2 / C_2)
+    # diou = d_2 / C_2
+    print("diou_max: ", diou, ", diou: ", o - d_2 / C_2)
 
     return (diou)
 
@@ -155,8 +156,9 @@ class KalmanBoxTracker(object):
         self.kf.R[2:, 2:] *= 10.
         self.kf.P[4:, 4:] *= 1000.  # give high uncertainty to the unobservable initial velocities
         self.kf.P *= 10.
+        self.kf.P[1:2, 1:2] *= 0.001 # give low uncertainty to the initial position values
         self.kf.Q[-1, -1] *= 0.01
-        self.kf.Q[4:, 4:] *= 0.01
+
 
         self.kf.x[:4] = convert_bbox_to_z(bbox)
         self.time_since_update = 0
@@ -191,7 +193,7 @@ class KalmanBoxTracker(object):
         self.age += dt
         if (self.time_since_update > 0):
             self.hit_streak = 0
-        self.time_since_update += dt
+        self.time_since_update += 1
         self.history.append(convert_x_to_bbox(self.kf.x))
         return self.history[-1]
 
@@ -273,6 +275,7 @@ class Sort(object):
         to_del = []
         ret = []
         unmatched_ret = []
+        unmatched_dets_ret = []
         for t, trk in enumerate(trks):
             pos = self.trackers[t].predict(dt)[0]
             trk[:] = [pos[0], pos[1], pos[2], pos[3], 0]
@@ -283,18 +286,19 @@ class Sort(object):
             self.trackers.pop(t)
         matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(dets, trks, self.iou_threshold)
 
-        print(matched, ", ", unmatched_trks)
+        print(matched, ", ", unmatched_trks, ", ", unmatched_dets)
 
         # update matched trackers with assigned detections
         for m in matched:
+            #unmatched_ret.append(
+            #    np.concatenate((self.trackers[m[1]].history[-1], [[self.trackers[m[1]].id + 1]]), axis=1))
             self.trackers[m[1]].update(dets[m[0], :])
-            print(self.trackers[m[1]].id, ": ", m[1], ",", self.trackers[m[1]].kf.x[4], ", ",
-                  self.trackers[m[1]].kf.x[5])
-
-        print("-----")
 
         for m in unmatched_trks:
             unmatched_ret.append(np.concatenate((self.trackers[m].history[-1], [[self.trackers[m].id + 1]]), axis=1))
+
+        for m in unmatched_dets:
+            unmatched_dets_ret.append(dets[m, :])
 
         # create and initialise new trackers for unmatched detections
         for i in unmatched_dets:
@@ -303,20 +307,21 @@ class Sort(object):
         i = len(self.trackers)
         for trk in reversed(self.trackers):
             d = trk.get_state()[0]
-            if (trk.time_since_update < 0.2) and (trk.hit_streak >= self.min_hits or self.frame_count <= self.min_hits):
+            print(trk.id, ": ", trk.time_since_update)
+            if (trk.time_since_update < self.max_age) and (trk.hit_streak >= self.min_hits): #or self.frame_count <= self.min_hits):
                 ret.append(np.concatenate((d, [trk.id + 1])).reshape(1, -1))  # +1 as MOT benchmark requires positive
             i -= 1
             # remove dead tracklet
             if (trk.time_since_update > self.max_age):
                 self.trackers.pop(i)
         if (len(ret) > 0 and len(unmatched_ret) > 0):
-            return np.concatenate(ret), np.concatenate(unmatched_ret)
+            return np.concatenate(ret), np.concatenate(unmatched_ret), unmatched_dets_ret
         elif (len(ret) > 0):
-            return np.concatenate(ret), np.empty((0, 5))
-        else:
-            return np.empty((0, 5)), np.concatenate(unmatched_ret)
+            return np.concatenate(ret), np.empty((0, 5)), unmatched_dets_ret
+        elif (len(unmatched_ret) > 0):
+            return np.empty((0, 5)), np.concatenate(unmatched_ret), unmatched_dets_ret
 
-        return np.empty((0, 5)), np.empty((0, 5))
+        return np.empty((0, 5)), np.empty((0, 5)), unmatched_dets_ret
 
 
 def parse_args():

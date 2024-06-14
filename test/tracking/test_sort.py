@@ -9,7 +9,7 @@ if __name__ == '__main__':
     with open('detections_file.json') as file:
         j = json.loads(file.read())
 
-    tracker = Sort(max_age=0.5, min_hits=3, iou_threshold=0.1)
+    tracker = Sort(max_age=5, min_hits=3, iou_threshold=0.1)
 
     old_timestamp = -1
     for frames in j["data"]:
@@ -20,8 +20,8 @@ if __name__ == '__main__':
              frames["detections"]])
 
         print("dt: ", (frames["timestamp"] - old_timestamp) / 1000 if old_timestamp > 0 else 0)
-        tracks, unmatched_tracks = tracker.update(dets=xs, dt=(frames[
-                                                                   "timestamp"] - old_timestamp) / 1000 if old_timestamp > 0 else 0)
+        tracks, unmatched_tracks, unmatched_dets = tracker.update(dets=xs, dt=(frames[
+                                                                                   "timestamp"] - old_timestamp) / 1000 if old_timestamp > 0 else 0)
 
         img = cv2.imread("/home/lukas/src/minimal/data/camera_simulator/s110_w_cam_8/s110_w_cam_8_images/" + str(
             frames["timestamp"]) + ".jpg")
@@ -36,11 +36,15 @@ if __name__ == '__main__':
             rng = np.random.default_rng(int(track[4]))
             random.seed(int(track[4]))
             cv2.rectangle(img, (int(track[0]), int(track[1])), (int(track[2]), int(track[3])),
-                          (random.randint(0, 256), random.randint(0, 256), random.randint(0, 256)), 5)
+                          (random.randint(0, 256), random.randint(0, 256), random.randint(0, 256)), 1)
+    #
+    # for track in xs:
+    #    cv2.rectangle(img, (int(track[0]), int(track[1])), (int(track[2]), int(track[3])),
+    #                  (0, 0, 0), 1)
 
-        for track in xs:
-            cv2.rectangle(img, (int(track[0]), int(track[1])), (int(track[2]), int(track[3])),
-                          (0, 0, 0), 1)
+    # for track in unmatched_dets:
+    #    cv2.rectangle(img, (int(track[0]), int(track[1])), (int(track[2]), int(track[3])),
+    #                  (0, 0, 255), 20)
 
         cv2.imshow("img", img)
         cv2.waitKey(0)
