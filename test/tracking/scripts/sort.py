@@ -193,6 +193,7 @@ class KalmanBoxTracker(object):
         self.age += dt
         if (self.time_since_update > 0):
             self.hit_streak = 0
+            #self.hits -= 1
         self.time_since_update += 1
         self.history.append(convert_x_to_bbox(self.kf.x))
         return self.history[-1]
@@ -290,12 +291,7 @@ class Sort(object):
 
         # update matched trackers with assigned detections
         for m in matched:
-            #unmatched_ret.append(
-            #    np.concatenate((self.trackers[m[1]].history[-1], [[self.trackers[m[1]].id + 1]]), axis=1))
             self.trackers[m[1]].update(dets[m[0], :])
-
-        for m in unmatched_trks:
-            unmatched_ret.append(np.concatenate((self.trackers[m].history[-1], [[self.trackers[m].id + 1]]), axis=1))
 
         for m in unmatched_dets:
             unmatched_dets_ret.append(dets[m, :])
@@ -310,15 +306,17 @@ class Sort(object):
             print(trk.id, ": ", trk.time_since_update)
             if (trk.time_since_update < self.max_age) and (trk.hit_streak >= self.min_hits): #or self.frame_count <= self.min_hits):
                 ret.append(np.concatenate((d, [trk.id + 1])).reshape(1, -1))  # +1 as MOT benchmark requires positive
+            elif (trk.time_since_update < self.max_age) and (trk.hits >= self.min_hits):
+                unmatched_ret.append(np.concatenate((d, [trk.id + 1])).reshape(1, -1))
             i -= 1 # add not only thes but also the ones which have only one unmatched version
             # remove dead tracklet
-            if (trk.time_since_update > self.max_age):
+            if trk.time_since_update > self.max_age:
                 self.trackers.pop(i)
-        if (len(ret) > 0 and len(unmatched_ret) > 0):
+        if len(ret) > 0 and len(unmatched_ret) > 0:
             return np.concatenate(ret), np.concatenate(unmatched_ret), unmatched_dets_ret
-        elif (len(ret) > 0):
+        elif len(ret) > 0:
             return np.concatenate(ret), np.empty((0, 5)), unmatched_dets_ret
-        elif (len(unmatched_ret) > 0):
+        elif len(unmatched_ret) > 0:
             return np.empty((0, 5)), np.concatenate(unmatched_ret), unmatched_dets_ret
 
         return np.empty((0, 5)), np.empty((0, 5)), unmatched_dets_ret

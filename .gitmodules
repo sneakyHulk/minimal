@@ -25,6 +25,6 @@
 [submodule "thirdparty/sort"]
 	path = thirdparty/sort
 	url = https://github.com/yasenh/sort-cpp.git
-[submodule "thirdparty/sort-cpp"]
-	path = thirdparty/sort-cpp
-	url = https://github.com/mcximing/sort-cpp.git
+[submodule "thirdparty/ocsort"]
+	path = thirdparty/ocsort
+	url = https://github.com/noahcao/OC_SORT.git
