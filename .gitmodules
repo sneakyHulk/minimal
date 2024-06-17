@@ -28,3 +28,6 @@
 [submodule "thirdparty/ocsort"]
 	path = thirdparty/ocsort
 	url = https://github.com/noahcao/OC_SORT.git
+[submodule "thirdparty/ucmc"]
+	path = thirdparty/ucmc
+	url = https://github.com/corfyi/UCMCTrack.git

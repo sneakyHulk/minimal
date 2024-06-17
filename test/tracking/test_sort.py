@@ -6,6 +6,7 @@ import os
 import random
 
 from scripts.ocsort import OCSort
+from scripts.ucmc import UCMCTrack
 
 
 def main_ocsort():
@@ -22,7 +23,11 @@ def main_ocsort():
 
         tracker.update(xs)
 
+def min_ucmc():
+    with open('detections_file.json') as file:
+        j = json.loads(file.read())
 
+    tracker = UCMCTrack(12, 12, )
 
 def main_sort():
     with open('detections_file.json') as file:

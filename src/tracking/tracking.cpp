@@ -13,6 +13,7 @@
 #include <regex>
 #include <string>
 #include <thread>
+#include "tracking/KalmanFilterTracker.h"
 
 #include "CompactObject_generated.h"
 #include "Detection2D_generated.h"
