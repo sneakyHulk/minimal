@@ -37,6 +37,10 @@ int main(int argc, char** argv) {
 	eCAL::flatbuffers::CSubscriber<flatbuffers::FlatBufferBuilder> detection2d_list_subscriber("detection2d_list");
 	eCAL::flatbuffers::CPublisher<flatbuffers::FlatBufferBuilder> object_list_publisher("object_list");
 
+	tracking::Sort<> tracker;
+
+	tracker.update(1, {tracking::Detection2D(1, 2, 3, 4, 1, 0)});
+
 	while (!signal_handler::gSignalStatus) {
 		flatbuffers::FlatBufferBuilder msg;
 

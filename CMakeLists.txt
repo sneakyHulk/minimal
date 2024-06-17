@@ -10,6 +10,7 @@ add_subdirectory(thirdparty/argparse)
 add_subdirectory(thirdparty/libOpenDRIVE)
 add_subdirectory(thirdparty/cvplot/CvPlot)
 add_subdirectory(thirdparty/json)
+add_subdirectory(thirdparty/ranges-v3)
 
 #set(AUTODIFF_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 #set(AUTODIFF_BUILD_PYTHON OFF CACHE BOOL "" FORCE)

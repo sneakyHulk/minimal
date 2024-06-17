@@ -31,3 +31,6 @@
 [submodule "thirdparty/ucmc"]
 	path = thirdparty/ucmc
 	url = https://github.com/corfyi/UCMCTrack.git
+[submodule "thirdparty/ranges-v3"]
+	path = thirdparty/ranges-v3
+	url = https://github.com/ericniebler/range-v3.git

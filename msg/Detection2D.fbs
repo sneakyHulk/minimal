@@ -6,9 +6,9 @@ struct BoundingBox2D_XYXY {
 }
 
 struct Detection2D {
-    object_class:ubyte;
-    conf:float32;
     bbox:BoundingBox2D_XYXY;
+    conf:float32;
+    object_class:ubyte;
 }
 
 //enum Sensor : int { s110_w_cam_8, s110_n_cam_8, s110_e_cam_8, s110_s_cam_8 }

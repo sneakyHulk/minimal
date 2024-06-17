@@ -17,6 +17,7 @@ target_link_libraries(${PROJECT_NAME} INTERFACE
         ${Boost_LIBRARIES}
         nlohmann_json::nlohmann_json
         Eigen3::Eigen
+        range-v3::range-v3
 )
 target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_23)
 target_compile_definitions(${PROJECT_NAME} INTERFACE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")

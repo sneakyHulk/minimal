@@ -10,11 +10,14 @@
 #include <opencv2/opencv.hpp>
 #include <random>
 #include <ranges>
+#include <vector>
 
 #include "Config.h"
 
 #if !__cpp_lib_ranges_zip
-#include "transformation/zip-view.h"
+#include <range/v3/view/zip.hpp>
+#include <range/v3/view/take.hpp>
+#include <range/v3/view/drop.hpp>
 #endif
 
 std::random_device rd;
@@ -108,7 +111,7 @@ auto draw_map(std::filesystem::path odr_map, Config const& config, std::string c
 #if __cpp_lib_ranges_zip
 				auto adjacent_range = lane_border | std::ranges::views::adjacent<2>;
 #else
-				auto adjacent_range = c9::zip(lane_border | std::ranges::views::take(lane_border.size() - 1), lane_border | std::ranges::views::drop(1));
+				auto adjacent_range = ranges::view::zip(lane_border | ranges::view::take(lane_border.size() - 1), lane_border | ranges::view::drop(1));
 #endif
 
 				for (auto const [start, end] : adjacent_range) {
