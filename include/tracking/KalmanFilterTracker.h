@@ -4,6 +4,8 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <utility>
 #include <vector>
+#include <cstddef>
+#include <tuple>
 
 #include "KalmanFilter.h"
 
