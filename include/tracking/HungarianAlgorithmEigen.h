@@ -100,15 +100,13 @@ class HungarianAlgorithmEigen {
 
 		// Loop to update stars and primes based on the newly starred zero.
 		while (true) {
-			Eigen::Index star_row, prime_col;
-
 			// If there are no starred zeros in the current column, break the loop.
 			if (!star_matrix.col(col).any()) {
 				break;
 			}
 
 			// Find the starred zero in the column and unstar it.
-			star_row = find_star_in_column(col);
+			Eigen::Index const star_row = find_star_in_column(col);
 			new_star_matrix(star_row, col) = false;
 
 			// If there are no primed zeros in the row of the starred zero, break the loop.
@@ -117,7 +115,7 @@ class HungarianAlgorithmEigen {
 			}
 
 			// Find the primed zero in the row and star it.
-			prime_col = find_prime_in_row(star_row);
+			Eigen::Index const prime_col = find_prime_in_row(star_row);
 			new_star_matrix(star_row, prime_col) = true;
 
 			// Move to the column of the newly starred zero.
@@ -268,8 +266,7 @@ class HungarianAlgorithmEigen {
 		for (int row = 0; row < star_matrix.rows(); ++row) {
 			Eigen::Index col;
 			// Check if there is a starred zero in the current row.
-			bool has_star = star_matrix.row(row).maxCoeff(&col);
-			if (has_star) {
+			if (bool has_star = star_matrix.row(row).maxCoeff(&col)) {
 				// If there is a starred zero, assign the corresponding column to this row.
 				assignment[row] = col;
 			} else {

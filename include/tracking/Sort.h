@@ -1,10 +1,13 @@
 #pragma once
+#include <common.h>
+
 #include <Eigen/Eigen>
 #include <ranges>
 #include <vector>
 
 #include "KalmanFilterTracker.h"
 #include "association_functions.h"
+#include "common_output.h"
 #include "linear_assignment.h"
 
 #if !__cpp_lib_ranges_enumerate
@@ -45,6 +48,10 @@ namespace tracking {
 					association_matrix(i, j) = association_function(predict_bbox, detection.bbox);
 				}
 			}
+
+			auto const [matches, unmatched_detections, unmatched_trackers] = linear_assignment(association_matrix, association_threshold);
+
+			common::println(", matches: ", matches, ", unmatched_detections: ", unmatched_detections, ", unmatched_trackers: ", unmatched_trackers);
 		}
 	};
 }  // namespace tracking

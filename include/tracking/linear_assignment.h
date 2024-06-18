@@ -22,7 +22,7 @@
  *         2. A set of unassigned row indices.
  *         3. A set of unassigned column indices.
  */
-std::tuple<std::vector<std::pair<int, int>>, std::set<int>, std::set<int>> indices_to_matches(const Eigen::MatrixXd& cost_matrix, const Eigen::MatrixXi& indices, double thresh) {
+inline std::tuple<std::vector<std::pair<int, int>>, std::set<int>, std::set<int>> indices_to_matches(const Eigen::MatrixXd& cost_matrix, const Eigen::MatrixXi& indices, double thresh) {
 	if (cost_matrix.rows() <= 0 || cost_matrix.cols() <= 0) {
 		throw std::invalid_argument("Cost matrix dimensions must be positive.");
 	}
@@ -30,8 +30,8 @@ std::tuple<std::vector<std::pair<int, int>>, std::set<int>, std::set<int>> indic
 	std::vector<std::pair<int, int>> matches;
 	std::set<int> unmatched_a, unmatched_b;
 
-	int num_rows = cost_matrix.rows();
-	int num_cols = cost_matrix.cols();
+	int num_rows = static_cast<int>(cost_matrix.rows());
+	int num_cols = static_cast<int>(cost_matrix.cols());
 
 	// Initialize unmatched indices for both dimensions.
 	for (int i = 0; i < num_rows; i++) unmatched_a.insert(i);
@@ -44,7 +44,7 @@ std::tuple<std::vector<std::pair<int, int>>, std::set<int>, std::set<int>> indic
 		int j = indices(k, 1);
 		if (i != -1 && j != -1) {
 			if (cost_matrix(i, j) <= thresh) {
-				matches.push_back({i, j});
+				matches.emplace_back(i, j);
 				unmatched_a.erase(i);
 				unmatched_b.erase(j);
 			}
@@ -69,9 +69,9 @@ std::tuple<std::vector<std::pair<int, int>>, std::set<int>, std::set<int>> indic
  *         2. A set of unassigned row indices.
  *         3. A set of unassigned column indices.
  */
-std::tuple<std::vector<std::pair<int, int>>, std::set<int>, std::set<int>> linear_assignment(const Eigen::MatrixXd& cost_matrix, double thresh) {
-	int num_rows = cost_matrix.rows();
-	int num_cols = cost_matrix.cols();
+inline std::tuple<std::vector<std::pair<int, int>>, std::set<int>, std::set<int>> linear_assignment(const Eigen::MatrixXd& cost_matrix, double thresh) {
+	int num_rows = static_cast<int>(cost_matrix.rows());
+	int num_cols = static_cast<int>(cost_matrix.cols());
 
 	// Handle empty cost matrix scenario.
 	if (num_rows == 0 || num_cols == 0) {
