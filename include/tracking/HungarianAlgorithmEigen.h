@@ -28,8 +28,8 @@
 class HungarianAlgorithmEigen {
    public:
 	// Constructor and destructor
-	HungarianAlgorithmEigen();
-	~HungarianAlgorithmEigen();
+	HungarianAlgorithmEigen() = default;
+	~HungarianAlgorithmEigen() = default;
 
 	// Solves the assignment problem given a distance matrix and returns the total cost.
 	// The assignment of rows to columns is returned in the 'Assignment' vector.

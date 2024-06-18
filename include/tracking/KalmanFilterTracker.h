@@ -16,27 +16,27 @@ namespace tracking {
 		double top;
 		double right;
 		double bottom;
-		constexpr BoundingBoxXYXY(double left, double top, double right, double bottom) : left(left), top(top), right(right), bottom(bottom) {}
+		constexpr BoundingBoxXYXY(double const left, double const top, double const right, double const bottom) : left(left), top(top), right(right), bottom(bottom) {}
 	};
 
-	template <std::size_t max_age = 4, std::size_t min_consecutive_hits = 3>
+	template <std::size_t max_age, std::size_t min_consecutive_hits>
 	class KalmanBoxTracker : private KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> {
 		// reuse random generator
-		static thread_local boost::uuids::random_generator generator;
+		static int _id_max;
 
-		boost::uuids::uuid id = generator();
-		int consecutive_hits = 0;
-		int consecutive_fails = 0;
-		bool displayed = false;
+		int _id = ++_id_max;
+		int _consecutive_hits = 0;
+		int _consecutive_fails = 0;
+		bool _displayed = false;
 
 		// per frame history
-		std::vector<BoundingBoxXYXY> history;
+		std::vector<BoundingBoxXYXY> _history;
 
 	   public:
-		explicit KalmanBoxTracker(BoundingBoxXYXY&& bbox) : KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}>(make_constant_box_velocity_model_kalman_filter(std::forward<decltype(bbox)>(bbox))) {}
+		explicit KalmanBoxTracker(BoundingBoxXYXY const& bbox) : KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}>(make_constant_box_velocity_model_kalman_filter(bbox)) {}
 
-		static decltype(x) convert_bbox_to_z(BoundingBoxXYXY&& bbox) {
-			decltype(x) x_;
+		[[nodiscard]] static decltype(z) convert_bbox_to_z(BoundingBoxXYXY const& bbox) {
+			decltype(z) z_;
 
 			auto const w = bbox.right - bbox.left;
 			auto const h = bbox.bottom - bbox.top;
@@ -47,38 +47,46 @@ namespace tracking {
 			auto const s = w * h;
 			auto const r = w / h;
 
-			x_ << x_center, y_center, s, r, 0., 0., 0.;
-			return x_;
+			z_ << x_center, y_center, s, r;
+			return z_;
 		}
 
-		static constexpr BoundingBoxXYXY convert_x_to_bbox(decltype(x) const& x_) {
+		[[nodiscard]] static constexpr BoundingBoxXYXY convert_x_to_bbox(decltype(x) const& x_) {
 			auto const w = std::sqrt(x_(2) * x_(3));
 			auto const h = x_(2) / w;
 
 			return {x_(0) - w / 2., x_(1) - h / 2., x_(0) + w / 2., x_(1) + h / 2.};
 		}
 
-		BoundingBoxXYXY const& predict(double dt) {
+		BoundingBoxXYXY const& predict(double const dt) {
 			if (dt * x(6) + x(2) <= 0) x(2) *= 0.;  // area must be >= 0;
 			KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}>::predict(dt);
-			if (consecutive_fails > 0) consecutive_hits = 0;
-			consecutive_fails += 1;
+			if (_consecutive_fails > 0) _consecutive_hits = 0;
+			_consecutive_fails += 1;
 
-			return history.emplace_back(convert_x_to_bbox(x));
+			return _history.emplace_back(convert_x_to_bbox(x));
 		}
 
-		void update(BoundingBoxXYXY&& bbox) {
-			consecutive_fails = 0;
-			consecutive_hits += 1;
+		void update(BoundingBoxXYXY const& bbox) {
+			_consecutive_fails = 0;
+			_consecutive_hits += 1;
+			if (_consecutive_hits >= min_consecutive_hits) _displayed = true;
 
-			KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}>::update(convert_bbox_to_z(std::forward<decltype(bbox)>(bbox)));
+			KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}>::update(convert_bbox_to_z(bbox));
 
-			history.back() = convert_x_to_bbox(x);
+			_history.back() = convert_x_to_bbox(x);
 		}
+
+		[[nodiscard]] BoundingBoxXYXY state() const { return _history.back(); }
+		[[nodiscard]] auto id() const { return _id; }
+		[[nodiscard]] auto consecutive_hits() const { return _consecutive_hits; }
+		[[nodiscard]] auto consecutive_fails() const { return _consecutive_fails; }
+		[[nodiscard]] auto displayed() const { return _displayed; }
 
 	   private:
-		static KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> make_constant_box_velocity_model_kalman_filter(BoundingBoxXYXY&& bbox) {
-			decltype(x) x_ = convert_bbox_to_z(std::forward<decltype(bbox)>(bbox));
+		static KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> make_constant_box_velocity_model_kalman_filter(BoundingBoxXYXY const& bbox) {
+			decltype(x) x_;
+			x_ << convert_bbox_to_z(bbox), 0., 0., 0.;
 			decltype(F) F_;
 			F_ << 1., 0., 0., 0., 1., 0., 0.,  //
 			    0., 1., 0., 0., 0., 1., 0.,    //
@@ -93,8 +101,8 @@ namespace tracking {
 			    0., 0., 1., 0., 0., 0., 0.,    //
 			    0., 0., 0., 1., 0., 0., 0.;    //
 			decltype(P) P_ = decltype(P)::Identity();
-			// P_(0, 0) *= 0.01;   // give low uncertainty to the initial position values (because newest yolo ist pretty accurate)
-			// P_(1, 1) *= 0.01;   // give low uncertainty to the initial position values (because newest yolo ist pretty accurate)
+			P_(0, 0) *= 10.;  // give low uncertainty to the initial position values (because newest yolo ist pretty accurate)
+			P_(1, 1) *= 10.;  // give low uncertainty to the initial position values (because newest yolo ist pretty accurate)
 			P_(2, 2) *= 10.;
 			P_(3, 3) *= 10.;
 			P_(4, 4) *= 10000.;  // give high uncertainty to the unobservable initial velocities
@@ -109,4 +117,7 @@ namespace tracking {
 			return {std::forward<decltype(x)>(x_), std::forward<decltype(F)>(F_), std::forward<decltype(H)>(H_), std::forward<decltype(P)>(P_), std::forward<decltype(R)>(R_), std::forward<decltype(Q)>(Q_)};
 		}
 	};
+
+	template <std::size_t max_age, std::size_t min_consecutive_hits>
+	int KalmanBoxTracker<max_age, min_consecutive_hits>::_id_max = 0;
 }  // namespace tracking

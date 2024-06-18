@@ -19,18 +19,18 @@ namespace tracking {
 		BoundingBoxXYXY bbox;
 		double conf;
 		std::uint8_t object_class;
-		constexpr Detection2D(double left, double top, double right, double bottom, double conf, std::uint8_t object_class) : bbox(left, top, right, bottom), conf(conf), object_class(object_class) {}
-		constexpr Detection2D(BoundingBoxXYXY&& bbox, double conf, std::uint8_t object_class) : bbox(std::forward<decltype(bbox)>(bbox)), conf(conf), object_class(object_class) {}
+		constexpr Detection2D(double const left, double const top, double const right, double const bottom, double const conf, std::uint8_t const object_class) : bbox(left, top, right, bottom), conf(conf), object_class(object_class) {}
+		constexpr Detection2D(BoundingBoxXYXY const& bbox, double const conf, std::uint8_t const object_class) : bbox(bbox), conf(conf), object_class(object_class) {}
 	};
 
-	template <std::size_t max_age = 4, std::size_t min_consecutive_hits = 3, double association_threshold = 0.3, auto association_function = iou>
+	template <std::size_t max_age = 4, std::size_t min_consecutive_hits = 3, double association_threshold = 0.1, auto association_function = iou>
 	class Sort {
 		std::vector<KalmanBoxTracker<max_age, min_consecutive_hits>> trackers;
 
 	   public:
 		Sort() = default;
-		void update(double dt, std::vector<Detection2D>&& detections) {
-			Eigen::MatrixXd association_matrix = Eigen::MatrixXd::Zero(detections.size(), trackers.size());
+		std::pair<std::vector<BoundingBoxXYXY>, std::vector<BoundingBoxXYXY>> update(double dt, std::vector<Detection2D> const& detections) {
+			Eigen::MatrixXd association_matrix = Eigen::MatrixXd::Zero(trackers.size(), detections.size());
 #if __cpp_lib_ranges_enumerate
 			auto trackers_enumerate = std::views::enumerate(trackers);
 #else
@@ -49,9 +49,37 @@ namespace tracking {
 				}
 			}
 
-			auto const [matches, unmatched_detections, unmatched_trackers] = linear_assignment(association_matrix, association_threshold);
+			common::println(association_matrix);
 
-			common::println(", matches: ", matches, ", unmatched_detections: ", unmatched_detections, ", unmatched_trackers: ", unmatched_trackers);
+			auto const [matches, unmatched_trackers, unmatched_detections] = linear_assignment(association_matrix, association_threshold);
+
+			common::println("matches: ", matches, ", unmatched_detections: ", unmatched_detections, ", unmatched_trackers: ", unmatched_trackers);
+
+			for (auto const [tracker_index, detection_index] : matches) {
+				trackers.at(tracker_index).update(detections.at(detection_index).bbox);
+			}
+
+			for (auto const detection_index : unmatched_detections) {
+				trackers.emplace_back(detections.at(detection_index).bbox);
+			}
+
+			std::vector<BoundingBoxXYXY> matched;
+			std::vector<BoundingBoxXYXY> unmatched;
+			for (auto tracker = trackers.rbegin(); tracker != trackers.rend(); ++tracker) {
+				if (tracker->consecutive_fails() < max_age) {
+					if (tracker->consecutive_hits() >= min_consecutive_hits) {
+						matched.push_back(tracker->state());
+					}
+					if (tracker->displayed()) {
+						unmatched.push_back(tracker->state());
+					}
+				}
+				if (tracker->consecutive_fails() > max_age) {
+					trackers.erase(std::next(tracker).base());
+				}
+			}
+
+			return {matched, unmatched};
 		}
 	};
 }  // namespace tracking

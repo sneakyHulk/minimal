@@ -43,6 +43,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_link_libraries(${PROJECT_NAME}
         common
         nlohmann_json::nlohmann_json
+        tracking
         ${OpenCV_LIBS}
 )
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
