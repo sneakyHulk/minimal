@@ -22,13 +22,20 @@ int main() {
 			detections.emplace_back(detection["left"], detection["top"], detection["right"], detection["bottom"], detection["conf"], 1);
 		}
 
-		auto const [matched, unmatched] = tracker.update(timestamp_old > 0 ? static_cast<double>(frame["timestamp"].get<std::int64_t>() - timestamp_old) / 1000. : 0, detections);
+		common::println("dt: ", static_cast<double>(frame["timestamp"].get<std::int64_t>() - timestamp_old) / 1000.);
+		auto const [matched, unmatched] = tracker.update(static_cast<double>(frame["timestamp"].get<std::int64_t>() - timestamp_old) / 1000., detections);
 
 		auto img = cv::imread(std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("data/camera_simulator/s110_w_cam_8/s110_w_cam_8_images") / std::filesystem::path(to_string(frame["timestamp"]) + ".jpg"));
 
 		for (auto const& detection : detections) cv::rectangle(img, cv::Point2d(detection.bbox.left, detection.bbox.top), cv::Point2d(detection.bbox.right, detection.bbox.bottom), cv::Scalar_<int>(0, 0, 0), 1);
-		for (auto const& bbox : matched) cv::rectangle(img, cv::Point2d(bbox.left, bbox.top), cv::Point2d(bbox.right, bbox.bottom), cv::Scalar_<int>(0, 0, 255), 5);
-		for (auto const& bbox : unmatched) cv::rectangle(img, cv::Point2d(bbox.left, bbox.top), cv::Point2d(bbox.right, bbox.bottom), cv::Scalar_<int>(0, 0, 255), 1);
+		for (auto const& [bbox, id] : matched) {
+			cv::rectangle(img, cv::Point2d(bbox.left, bbox.top), cv::Point2d(bbox.right, bbox.bottom), cv::Scalar_<int>(0, 0, 255), 5);
+			cv::putText(img, std::to_string(id), cv::Point2d(bbox.left, bbox.top), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar_<int>(0, 0, 0), 1);
+		}
+		for (auto const& [bbox, id] : unmatched) {
+			cv::rectangle(img, cv::Point2d(bbox.left, bbox.top), cv::Point2d(bbox.right, bbox.bottom), cv::Scalar_<int>(0, 0, 255), 1);
+			cv::putText(img, std::to_string(id), cv::Point2d(bbox.left, bbox.top), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar_<int>(0, 0, 0), 1);
+		}
 
 		cv::imshow("img", img);
 		cv::waitKey(0);

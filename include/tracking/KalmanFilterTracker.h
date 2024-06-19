@@ -1,14 +1,9 @@
 #pragma once
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <tuple>
 #include <utility>
 #include <vector>
-
-#include "KalmanFilter.h"
 
 namespace tracking {
 	struct BoundingBoxXYXY {
@@ -19,6 +14,17 @@ namespace tracking {
 		constexpr BoundingBoxXYXY(double const left, double const top, double const right, double const bottom) : left(left), top(top), right(right), bottom(bottom) {}
 	};
 
+	[[maybe_unused]] std::ostream& operator<<(std::ostream& stream, BoundingBoxXYXY const& bbox) {
+		stream << '[' << bbox.left << ", " << bbox.top << ", " << bbox.right << ", " << bbox.bottom << ']';
+
+		return stream;
+	}
+}  // namespace tracking
+
+#include "KalmanFilter.h"
+#include "common_output.h"
+
+namespace tracking {
 	template <std::size_t max_age, std::size_t min_consecutive_hits>
 	class KalmanBoxTracker : private KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> {
 		// reuse random generator
@@ -64,6 +70,13 @@ namespace tracking {
 			if (_consecutive_fails > 0) _consecutive_hits = 0;
 			_consecutive_fails += 1;
 
+			common::println(x(4), ", ", x(5), ", ", x(6));
+
+			auto const test_x = F * x;
+			common::println(convert_x_to_bbox(test_x));
+			common::println(convert_x_to_bbox(x));
+			if (!_history.empty()) common::println(_history.back());
+
 			return _history.emplace_back(convert_x_to_bbox(x));
 		}
 
@@ -101,13 +114,13 @@ namespace tracking {
 			    0., 0., 1., 0., 0., 0., 0.,    //
 			    0., 0., 0., 1., 0., 0., 0.;    //
 			decltype(P) P_ = decltype(P)::Identity();
-			P_(0, 0) *= 10.;  // give low uncertainty to the initial position values (because newest yolo ist pretty accurate)
-			P_(1, 1) *= 10.;  // give low uncertainty to the initial position values (because newest yolo ist pretty accurate)
+			P_(0, 0) *= 0.01;  // give low uncertainty to the initial position values (because newest yolo ist pretty accurate)
+			P_(1, 1) *= 0.01;  // give low uncertainty to the initial position values (because newest yolo ist pretty accurate)
 			P_(2, 2) *= 10.;
 			P_(3, 3) *= 10.;
-			P_(4, 4) *= 10000.;  // give high uncertainty to the unobservable initial velocities
-			P_(5, 5) *= 10000.;  // give high uncertainty to the unobservable initial velocities
-			P_(6, 6) *= 10000.;  // give high uncertainty to the unobservable initial velocities
+			P_(4, 4) *= 1000.;  // give high uncertainty to the unobservable initial velocities
+			P_(5, 5) *= 1000.;  // give high uncertainty to the unobservable initial velocities
+			P_(6, 6) *= 1000.;  // give high uncertainty to the unobservable initial velocities
 			decltype(R) R_ = decltype(R)::Identity();
 			R_(2, 2) *= 10.;
 			R_(3, 3) *= 10.;
