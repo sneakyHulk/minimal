@@ -98,11 +98,7 @@ def diou_batch(bb_test, bb_gt):
     d_2 = (x_center_test - x_center_gt) * (x_center_test - x_center_gt) + (y_center_test - y_center_gt) * (
             y_center_test - y_center_gt)
 
-    print("d2: ", d_2, ", C2: ", C_2, ", d_2 / C_2: ", d_2 / C_2)
-    # diou = np.maximum(0., o - d_2 / C_2)
     diou = o - d_2 / C_2
-    # diou = d_2 / C_2
-    print("diou_max: ", diou, ", diou: ", o - d_2 / C_2)
 
     return (diou)
 
@@ -156,9 +152,8 @@ class KalmanBoxTracker(object):
         self.kf.R[2:, 2:] *= 10.
         self.kf.P[4:, 4:] *= 1000.  # give high uncertainty to the unobservable initial velocities
         self.kf.P *= 10.
-        self.kf.P[1:2, 1:2] *= 0.001 # give low uncertainty to the initial position values
+        self.kf.P[1:2, 1:2] *= 0.001  # give low uncertainty to the initial position values
         self.kf.Q[-1, -1] *= 0.01
-
 
         self.kf.x[:4] = convert_bbox_to_z(bbox)
         self.time_since_update = 0
@@ -183,6 +178,7 @@ class KalmanBoxTracker(object):
         """
         Advances the state vector and returns the predicted bounding box estimate.
         """
+        print(convert_x_to_bbox(self.kf.x))
         self.kf.F = np.array(
             [[1, 0, 0, 0, dt, 0, 0], [0, 1, 0, 0, 0, dt, 0], [0, 0, 1, 0, 0, 0, dt], [0, 0, 0, 1, 0, 0, 0],
              [0, 0, 0, 0, 1, 0, 0], [0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 1]])
@@ -193,9 +189,13 @@ class KalmanBoxTracker(object):
         self.age += dt
         if (self.time_since_update > 0):
             self.hit_streak = 0
-            #self.hits -= 1
+            # self.hits -= 1
         self.time_since_update += 1
         self.history.append(convert_x_to_bbox(self.kf.x))
+
+        print(convert_x_to_bbox(self.kf.x))
+        print(self.kf.x[4], ", ", self.kf.x[5], ", ", self.kf.x[6])
+
         return self.history[-1]
 
     def get_state(self):
@@ -215,9 +215,6 @@ def associate_detections_to_trackers(detections, trackers, iou_threshold=0.3):
         return np.empty((0, 2), dtype=int), np.arange(len(detections)), np.empty((0, 5), dtype=int)
 
     iou_matrix = iou_batch(detections, trackers)
-
-    print(iou_matrix)
-
     if min(iou_matrix.shape) > 0:
         a = (iou_matrix > iou_threshold).astype(np.int32)
         if a.sum(1).max() == 1 and a.sum(0).max() == 1:
@@ -289,7 +286,7 @@ class Sort(object):
             self.trackers.pop(t)
         matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(dets, trks, self.iou_threshold)
 
-        print(matched, ", ", unmatched_trks, ", ", unmatched_dets)
+        # print(matched, ", ", unmatched_trks, ", ", unmatched_dets)
 
         # update matched trackers with assigned detections
         for m in matched:
@@ -306,11 +303,12 @@ class Sort(object):
         for trk in reversed(self.trackers):
             d = trk.get_state()[0]
             print(trk.id, ": ", trk.time_since_update)
-            if (trk.time_since_update < self.max_age) and (trk.hit_streak >= self.min_hits): #or self.frame_count <= self.min_hits):
+            if (trk.time_since_update < self.max_age) and (
+                    trk.hit_streak >= self.min_hits):  # or self.frame_count <= self.min_hits):
                 ret.append(np.concatenate((d, [trk.id + 1])).reshape(1, -1))  # +1 as MOT benchmark requires positive
             elif (trk.time_since_update < self.max_age) and (trk.hits >= self.min_hits):
                 unmatched_ret.append(np.concatenate((d, [trk.id + 1])).reshape(1, -1))
-            i -= 1 # add not only thes but also the ones which have only one unmatched version
+            i -= 1  # add not only thes but also the ones which have only one unmatched version
             # remove dead tracklet
             if trk.time_since_update > self.max_age:
                 self.trackers.pop(i)

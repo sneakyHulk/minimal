@@ -2,9 +2,16 @@
 
 #include <Eigen/Eigen>
 #include <array>
+#include <ranges>
 #include <vector>
 
-template <std::size_t dim_x, std::size_t dim_z, std::size_t n_velocity_components = 0, std::array<double, n_velocity_components> i = {}, std::array<double, n_velocity_components> j = {}>
+#if !__cpp_lib_ranges_zip
+#include <range/v3/view/zip.hpp>
+#endif
+
+#include "common_output.h"
+
+template <std::size_t dim_x, std::size_t dim_z, std::size_t n_velocity_components = 0, std::array<int, n_velocity_components> i = {}, std::array<int, n_velocity_components> j = {}>
 class KalmanFilter {
    protected:
 	Eigen::Matrix<double, dim_x, 1> x;      // x: This is the Kalman state variable. [dim_x, 1].
@@ -26,7 +33,15 @@ class KalmanFilter {
 	    : x(std::forward<decltype(x)>(x)), F(std::forward<decltype(F)>(F)), H(std::forward<decltype(H)>(H)), P(std::forward<decltype(P)>(P)), R(std::forward<decltype(R)>(R)), Q(std::forward<decltype(Q)>(Q)) {}
 
 	void predict(double dt) {
-		F(i, j) *= dt;
+#if __cpp_lib_ranges_zip
+		auto indices = std::ranges::views::zip(i, j);
+#else
+		auto indices = ranges::view::zip(i, j);
+#endif
+		for (auto const [ii, jj] : indices) {
+			F(ii, jj) = dt;
+		}
+
 		return predict();
 	}
 	void predict() {

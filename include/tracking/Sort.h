@@ -43,16 +43,15 @@ namespace tracking {
 		{ detection.object_class() } -> std::convertible_to<std::uint8_t>;
 	};
 
-	template <Detection2DType Detection2DT = Detection2D<BoundingBoxXYXY>, std::size_t max_age = 4, std::size_t min_consecutive_hits = 3, double association_threshold = 0.1, auto association_function = iou>
+	template <Detection2DType Detection2DT = Detection2D<BoundingBoxXYXY>, std::size_t max_age = 4, std::size_t min_consecutive_hits = 3, double association_threshold = 0.9, auto association_function = iou>
 	class Sort {
-		using BoundingBox = std::remove_cvref_t<std::invoke_result_t<decltype(&Detection2DT::bbox), Detection2DT>>;
-		std::vector<KalmanBoxTracker<max_age, min_consecutive_hits, BoundingBox>> trackers;
+		std::vector<KalmanBoxTracker<max_age, min_consecutive_hits>> trackers;
 
 	   public:
 		Sort() = default;
-		std::pair<std::vector<BoundingBox>, std::vector<BoundingBox>> update(double dt, std::ranges::viewable_range auto const& detections)
+		std::pair<std::vector<std::tuple<BoundingBox, int>>, std::vector<std::tuple<BoundingBox, int>>> update(double dt, std::ranges::viewable_range auto const& detections)
 		    requires std::is_same_v<std::iter_value_t<std::ranges::iterator_t<decltype(detections)>>, Detection2DT> {
-			Eigen::MatrixXd association_matrix = Eigen::MatrixXd::Zero(trackers.size(), detections.size());
+			Eigen::MatrixXd association_matrix = Eigen::MatrixXd::Ones(trackers.size(), detections.size());
 #if __cpp_lib_ranges_enumerate
 			auto trackers_enumerate = std::views::enumerate(trackers);
 #else
@@ -67,15 +66,11 @@ namespace tracking {
 				auto detections_enumerate = ranges::view::enumerate(detections);
 #endif
 				for (auto const& [j, detection] : detections_enumerate) {
-					association_matrix(i, j) = association_function(predict_bbox, detection.bbox());
+					association_matrix(i, j) -= association_function(predict_bbox, detection.bbox());
 				}
 			}
 
-			common::println(association_matrix);
-
 			auto const [matches, unmatched_trackers, unmatched_detections] = linear_assignment(association_matrix, association_threshold);
-
-			common::println("matches: ", matches, ", unmatched_detections: ", unmatched_detections, ", unmatched_trackers: ", unmatched_trackers);
 
 			for (auto const [tracker_index, detection_index] : matches) {
 				trackers.at(tracker_index).update(at(detections, detection_index).bbox());
@@ -85,15 +80,14 @@ namespace tracking {
 				trackers.emplace_back(at(detections, detection_index).bbox());
 			}
 
-			std::vector<BoundingBox> matched;
-			std::vector<BoundingBox> unmatched;
+			std::vector<std::tuple<BoundingBox, int>> matched;
+			std::vector<std::tuple<BoundingBox, int>> unmatched;
 			for (auto tracker = trackers.rbegin(); tracker != trackers.rend(); ++tracker) {
 				if (tracker->consecutive_fails() < max_age) {
 					if (tracker->consecutive_hits() >= min_consecutive_hits) {
-						matched.push_back(tracker->state());
-					}
-					if (tracker->displayed()) {
-						unmatched.push_back(tracker->state());
+						matched.emplace_back(tracker->state(), tracker->id());
+					} else if (tracker->displayed()) {
+						unmatched.emplace_back(tracker->state(), tracker->id());
 					}
 				}
 				if (tracker->consecutive_fails() > max_age) {
