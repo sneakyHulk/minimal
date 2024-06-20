@@ -23,6 +23,7 @@ int main() {
 		}
 
 		common::println("dt: ", static_cast<double>(frame["timestamp"].get<std::int64_t>() - timestamp_old) / 1000.);
+		// first dt is undefined but also never used;
 		auto const [matched, unmatched] = tracker.update(static_cast<double>(frame["timestamp"].get<std::int64_t>() - timestamp_old) / 1000., detections);
 
 		auto img = cv::imread(std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("data/camera_simulator/s110_w_cam_8/s110_w_cam_8_images") / std::filesystem::path(to_string(frame["timestamp"]) + ".jpg"));

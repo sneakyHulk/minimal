@@ -70,13 +70,6 @@ namespace tracking {
 			if (_consecutive_fails > 0) _consecutive_hits = 0;
 			_consecutive_fails += 1;
 
-			common::println(x(4), ", ", x(5), ", ", x(6));
-
-			auto const test_x = F * x;
-			common::println(convert_x_to_bbox(test_x));
-			common::println(convert_x_to_bbox(x));
-			if (!_history.empty()) common::println(_history.back());
-
 			return _history.emplace_back(convert_x_to_bbox(x));
 		}
 

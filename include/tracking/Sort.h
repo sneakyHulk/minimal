@@ -49,11 +49,7 @@ namespace tracking {
 				}
 			}
 
-			//common::println(association_matrix);
-
 			auto const [matches, unmatched_trackers, unmatched_detections] = linear_assignment(association_matrix, association_threshold);
-
-			common::println("matches: ", matches, ", unmatched_detections: ", unmatched_detections, ", unmatched_trackers: ", unmatched_trackers);
 
 			for (auto const [tracker_index, detection_index] : matches) {
 				trackers.at(tracker_index).update(detections.at(detection_index).bbox);

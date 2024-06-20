@@ -39,12 +39,9 @@ class KalmanFilter {
 		auto indices = ranges::view::zip(i, j);
 #endif
 		for (auto const [ii, jj] : indices) {
-			common::println(ii, jj);
-
 			F(ii, jj) = dt;
 		}
 
-		common::println(F);
 		return predict();
 	}
 	void predict() {
