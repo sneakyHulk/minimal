@@ -1,13 +1,13 @@
 struct BoundingBox2D_XYXY {
-    left:float32;
-    top:float32;
-    right:float32;
-    bottom:float32;
+    left:double;
+    top:double;
+    right:double;
+    bottom:double;
 }
 
 struct Detection2D {
     bbox:BoundingBox2D_XYXY;
-    conf:float32;
+    conf:double;
     object_class:ubyte;
 }
 
