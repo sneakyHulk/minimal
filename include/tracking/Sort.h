@@ -45,7 +45,8 @@ namespace tracking {
 
 	template <Detection2DType Detection2DT = Detection2D<BoundingBoxXYXY>, std::size_t max_age = 4, std::size_t min_consecutive_hits = 3, double association_threshold = 0.9, auto association_function = iou>
 	class Sort {
-		std::vector<KalmanBoxTracker<max_age, min_consecutive_hits>> trackers;
+		using BoundingBox = std::remove_cvref_t<std::invoke_result_t<decltype(&Detection2DT::bbox), Detection2DT>>;
+		std::vector<KalmanBoxTracker<max_age, min_consecutive_hits>> trackers{};
 
 	   public:
 		Sort() = default;

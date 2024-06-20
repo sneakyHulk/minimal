@@ -32,7 +32,6 @@ namespace tracking {
 #include "common_output.h"
 
 namespace tracking {
-	template <std::size_t max_age, std::size_t min_consecutive_hits>
 	template <typename T>
 	concept BoundingBoxType = requires(T bbox) {
 		bbox.left();
