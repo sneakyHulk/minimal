@@ -52,8 +52,8 @@ int main(int argc, char** argv) {
 				continue;
 			}
 
-			auto detections_range = std::ranges::views::transform(*detection2d_list->object(), [](Detection2D const* e) -> Detection2D { return *e; });
-			tracker.update(old_timestamp - detection2d_list->timestamp(), detections_range);
+			auto detections_range = std::ranges::views::transform(*detection2d_list->object(), [](Detection2D const* e) -> Detection2D const& { return *e; });
+			auto const [mtched, unmatched] = tracker.update(old_timestamp - detection2d_list->timestamp(), detections_range);
 
 			old_timestamp = detection2d_list->timestamp();
 

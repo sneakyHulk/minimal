@@ -1,4 +1,4 @@
-struct BoundingBox2D_XYXY {
+struct BoundingBoxXYXY {
     left:double;
     top:double;
     right:double;
@@ -6,12 +6,10 @@ struct BoundingBox2D_XYXY {
 }
 
 struct Detection2D {
-    bbox:BoundingBox2D_XYXY;
+    bbox:BoundingBoxXYXY;
     conf:double;
     object_class:ubyte;
 }
-
-//enum Sensor : int { s110_w_cam_8, s110_n_cam_8, s110_e_cam_8, s110_s_cam_8 }
 
 table Detection2DList {
     timestamp:ulong;        // UTC timestamp since epoch in ns

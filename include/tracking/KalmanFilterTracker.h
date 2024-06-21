@@ -43,9 +43,9 @@ namespace tracking {
 	template <std::size_t max_age, std::size_t min_consecutive_hits, BoundingBoxType BoundingBox = BoundingBoxXYXY>
 	class KalmanBoxTracker : private KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> {
 		// reuse random generator
-		static int _id_max;
+		static unsigned int _id_max;
 
-		int _id = ++_id_max;
+		unsigned int _id = ++_id_max;
 		int _consecutive_hits = 0;
 		int _consecutive_fails = 0;
 		bool _displayed = false;
@@ -140,5 +140,5 @@ namespace tracking {
 	};
 
 	template <std::size_t max_age, std::size_t min_consecutive_hits, BoundingBoxType BoundingBox>
-	int KalmanBoxTracker<max_age, min_consecutive_hits, BoundingBox>::_id_max = 0;
+	unsigned int KalmanBoxTracker<max_age, min_consecutive_hits, BoundingBox>::_id_max = 0U;
 }  // namespace tracking

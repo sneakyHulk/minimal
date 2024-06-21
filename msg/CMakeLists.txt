@@ -17,3 +17,8 @@ flatbuffers_generate_headers(
         SCHEMAS Image.fbs
         FLAGS --gen-object-api
 )
+flatbuffers_generate_headers(
+        TARGET ImageTrackerResult
+        SCHEMAS ImageTrackerResult.fbs
+        FLAGS --gen-object-api
+)

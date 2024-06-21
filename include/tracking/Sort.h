@@ -43,15 +43,15 @@ namespace tracking {
 		{ detection.object_class() } -> std::convertible_to<std::uint8_t>;
 	};
 
-	template <Detection2DType Detection2DT = Detection2D<BoundingBoxXYXY>, std::size_t max_age = 4, std::size_t min_consecutive_hits = 3, double association_threshold = 0.9, auto association_function = iou>
+	template <Detection2DType Detection = Detection2D<BoundingBoxXYXY>, std::size_t max_age = 4, std::size_t min_consecutive_hits = 3, double association_threshold = 0.9, auto association_function = iou>
 	class Sort {
-		using BoundingBox = std::remove_cvref_t<std::invoke_result_t<decltype(&Detection2DT::bbox), Detection2DT>>;
-		std::vector<KalmanBoxTracker<max_age, min_consecutive_hits>> trackers{};
+		using BoundingBox = std::remove_cvref_t<std::invoke_result_t<decltype(&Detection::bbox), Detection>>;
+		std::vector<KalmanBoxTracker<max_age, min_consecutive_hits, BoundingBox>> trackers{};
 
 	   public:
 		Sort() = default;
 		std::pair<std::vector<std::tuple<BoundingBox, int>>, std::vector<std::tuple<BoundingBox, int>>> update(double dt, std::ranges::viewable_range auto const& detections)
-		    requires std::is_same_v<std::iter_value_t<std::ranges::iterator_t<decltype(detections)>>, Detection2DT> {
+		    requires std::is_same_v<std::iter_value_t<std::ranges::iterator_t<decltype(detections)>>, Detection> {
 			Eigen::MatrixXd association_matrix = Eigen::MatrixXd::Ones(trackers.size(), detections.size());
 #if __cpp_lib_ranges_enumerate
 			auto trackers_enumerate = std::views::enumerate(trackers);
@@ -81,8 +81,8 @@ namespace tracking {
 				trackers.emplace_back(at(detections, detection_index).bbox());
 			}
 
-			std::vector<std::tuple<BoundingBox, int>> matched;
-			std::vector<std::tuple<BoundingBox, int>> unmatched;
+			std::vector<> matched;
+			std::vector<> unmatched;
 			for (auto tracker = trackers.rbegin(); tracker != trackers.rend(); ++tracker) {
 				if (tracker->consecutive_fails() < max_age) {
 					if (tracker->consecutive_hits() >= min_consecutive_hits) {

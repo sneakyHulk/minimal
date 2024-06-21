@@ -26,8 +26,8 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         tracking
         Detection2D
         flatbuffers
-        CompactObject
+        ImageTrackerResult
 )
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
-add_dependencies(${PROJECT_NAME} GENERATE_Detection2D GENERATE_CompactObject)
+add_dependencies(${PROJECT_NAME} GENERATE_Detection2D GENERATE_ImageTrackerResult)

@@ -1,0 +1,19 @@
+import "Detection2D.fbs"
+
+struct ImageTrackerResult {
+    bbox:BoundingBoxXYXY;
+    position:[double:2];
+    velocity:[double:2];
+    id:uint;
+    object_class:ubyte;
+    matched:bool;
+}
+
+table ImageTrackerResultList {
+    timestamp:ulong;                // UTC timestamp since epoch in ns
+    source:string;                  // source of detections
+    num_objects:uint;               // number of objects
+    objects:[ImageTrackerResult];   // vector of detections
+}
+
+root_type ImageTrackerResultList;
