@@ -7,7 +7,7 @@ project(image_display)
 find_package(OpenCV REQUIRED)
 
 add_executable(${PROJECT_NAME} ${PROJECT_NAME}.cpp)
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${OpenCV_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PRIVATE ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME}
         ecal
         common

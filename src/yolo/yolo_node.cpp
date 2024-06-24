@@ -273,8 +273,8 @@ int main(int argc, char** argv) {
 
 					++num_objects;
 
-					BoundingBox2D_XYXY bbox(keep[i][0].item().toFloat(), keep[i][1].item().toFloat(), keep[i][2].item().toFloat(), keep[i][3].item().toFloat());
-					Detection2D detection(cls, keep[i][4].item().toFloat(), bbox);
+					BoundingBoxXYXY bbox(keep[i][0].item().toFloat(), keep[i][1].item().toFloat(), keep[i][2].item().toFloat(), keep[i][3].item().toFloat());
+					Detection2D detection(bbox, keep[i][4].item().toFloat(), cls);
 
 					detection2d_list.object.push_back(detection);
 				}

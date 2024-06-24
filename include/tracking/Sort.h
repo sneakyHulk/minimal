@@ -24,13 +24,14 @@ std::ranges::range_reference_t<Range> at(Range& range, std::ranges::range_differ
 
 namespace tracking {
 	template <BoundingBoxType BoundingBox>
-	class Detection2D {
+	class [[maybe_unused]] Detection2D {
 		BoundingBox _bbox;
 		double _conf;
 		std::uint8_t _object_class;
 
 	   public:
-		constexpr Detection2D(BoundingBox const& bbox, double const conf, std::uint8_t const object_class) : _bbox(bbox), _conf(conf), _object_class(object_class) {}
+		constexpr Detection2D(BoundingBox&& bbox, double&& conf, std::uint8_t&& object_class)
+		    : _bbox(std::forward<decltype(bbox)>(bbox)), _conf(std::forward<decltype(conf)>(conf)), _object_class(std::forward<decltype(object_class)>(object_class)) {}
 		BoundingBox const& bbox() const { return _bbox; }
 		[[nodiscard]] double conf() const { return _conf; }
 		[[nodiscard]] std::uint8_t object_class() const { return _object_class; }
@@ -43,15 +44,51 @@ namespace tracking {
 		{ detection.object_class() } -> std::convertible_to<std::uint8_t>;
 	};
 
-	template <Detection2DType Detection = Detection2D<BoundingBoxXYXY>, std::size_t max_age = 4, std::size_t min_consecutive_hits = 3, double association_threshold = 0.9, auto association_function = iou>
+	template <BoundingBoxType BoundingBox>
+	class [[maybe_unused]] ImageTrackerResult {
+		BoundingBox _bbox;
+		std::array<double, 2> _position;
+		std::array<double, 2> _velocity;
+		unsigned int _id;
+		std::uint8_t _object_class;
+		bool _matched;
+
+	   public:
+		ImageTrackerResult(BoundingBox&& bbox, std::array<double, 2>&& position, std::array<double, 2>&& velocity, unsigned int id, std::uint8_t object_class, bool matched)
+		    : _bbox(std::forward<decltype(bbox)>(bbox)),
+		      _position(std::forward<decltype(position)>(position)),
+		      _velocity(std::forward<decltype(velocity)>(velocity)),
+		      _id(std::forward<decltype(id)>(id)),
+		      _object_class(std::forward<decltype(object_class)>(object_class)),
+		      _matched(std::forward<decltype(matched)>(matched)) {}
+		BoundingBox const& bbox() const { return _bbox; }
+		[[nodiscard]] std::array<double, 2> const& position() const { return _position; }
+		[[nodiscard]] std::array<double, 2> const& velocity() const { return _velocity; }
+		[[nodiscard]] unsigned int id() const { return _id; }
+		[[nodiscard]] std::uint8_t object_class() const { return _object_class; }
+		[[nodiscard]] bool matched() const { return _matched; }
+	};
+
+	template <typename T>
+	concept ImageTrackerResultType = requires(T result) {
+		{ result.bbox() } -> BoundingBoxType;
+		{ result.position() };
+		{ result.velocity() };
+		{ result.id() } -> std::convertible_to<unsigned int>;
+		{ result.object_class() } -> std::convertible_to<std::uint8_t>;
+		{ result.matched() } -> std::convertible_to<bool>;
+	};
+
+	template <Detection2DType Detection = Detection2D<BoundingBoxXYXY>, ImageTrackerResultType TrackerResult = ImageTrackerResult<BoundingBoxXYXY>, std::size_t max_age = 4, std::size_t min_consecutive_hits = 3,
+	    double association_threshold = 0.9, auto association_function = iou>
 	class Sort {
 		using BoundingBox = std::remove_cvref_t<std::invoke_result_t<decltype(&Detection::bbox), Detection>>;
 		std::vector<KalmanBoxTracker<max_age, min_consecutive_hits, BoundingBox>> trackers{};
+		std::map<unsigned int, std::uint8_t> _cls;
 
 	   public:
 		Sort() = default;
-		std::pair<std::vector<std::tuple<BoundingBox, int>>, std::vector<std::tuple<BoundingBox, int>>> update(double dt, std::ranges::viewable_range auto const& detections)
-		    requires std::is_same_v<std::iter_value_t<std::ranges::iterator_t<decltype(detections)>>, Detection> {
+		std::vector<TrackerResult> update(double dt, std::vector<Detection> const& detections) {
 			Eigen::MatrixXd association_matrix = Eigen::MatrixXd::Ones(trackers.size(), detections.size());
 #if __cpp_lib_ranges_enumerate
 			auto trackers_enumerate = std::views::enumerate(trackers);
@@ -73,22 +110,24 @@ namespace tracking {
 
 			auto const [matches, unmatched_trackers, unmatched_detections] = linear_assignment(association_matrix, association_threshold);
 
-			for (auto const [tracker_index, detection_index] : matches) {
-				trackers.at(tracker_index).update(at(detections, detection_index).bbox());
-			}
-
+			// create new tracker from new not matched detections:
 			for (auto const detection_index : unmatched_detections) {
-				trackers.emplace_back(at(detections, detection_index).bbox());
+				auto const& tracker = trackers.emplace_back(detections.at(detection_index).bbox());
+				_cls[tracker.id()] = detections.at(detection_index).object_class();
 			}
 
-			std::vector<> matched;
-			std::vector<> unmatched;
+			// update old tracker with matched detections:
+			for (auto const [tracker_index, detection_index] : matches) {
+				trackers.at(tracker_index).update(detections.at(detection_index).bbox());
+			}
+
+			std::vector<TrackerResult> matched;
 			for (auto tracker = trackers.rbegin(); tracker != trackers.rend(); ++tracker) {
 				if (tracker->consecutive_fails() < max_age) {
 					if (tracker->consecutive_hits() >= min_consecutive_hits) {
-						matched.emplace_back(tracker->state(), tracker->id());
+						matched.emplace_back(tracker->state(), tracker->position(), tracker->velocity(), tracker->id(), _cls.at(tracker->id()), true);
 					} else if (tracker->displayed()) {
-						unmatched.emplace_back(tracker->state(), tracker->id());
+						matched.emplace_back(tracker->state(), tracker->position(), tracker->velocity(), tracker->id(), _cls.at(tracker->id()), false);
 					}
 				}
 				if (tracker->consecutive_fails() > max_age) {
@@ -96,7 +135,7 @@ namespace tracking {
 				}
 			}
 
-			return {matched, unmatched};
+			return matched;
 		}
 	};
 }  // namespace tracking

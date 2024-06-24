@@ -14,7 +14,8 @@ namespace tracking {
 		double _bottom;
 
 	   public:
-		constexpr BoundingBoxXYXY(double const left, double const top, double const right, double const bottom) : _left(left), _top(top), _right(right), _bottom(bottom) {}
+		constexpr BoundingBoxXYXY(double&& left, double&& top, double&& right, double&& bottom)
+		    : _left(std::forward<decltype(left)>(left)), _top(std::forward<decltype(top)>(top)), _right(std::forward<decltype(right)>(right)), _bottom(std::forward<decltype(bottom)>(bottom)) {}
 		[[nodiscard]] double left() const { return _left; }
 		[[nodiscard]] double top() const { return _top; }
 		[[nodiscard]] double right() const { return _right; }
@@ -99,6 +100,8 @@ namespace tracking {
 		}
 
 		[[nodiscard]] BoundingBox state() const { return _history.back(); }
+		[[nodiscard]] std::array<double, 2> position() const { return {x(0), x(1)}; }
+		[[nodiscard]] std::array<double, 2> velocity() const { return {x(4), x(5)}; }
 		[[nodiscard]] auto id() const { return _id; }
 		[[nodiscard]] auto consecutive_hits() const { return _consecutive_hits; }
 		[[nodiscard]] auto consecutive_fails() const { return _consecutive_fails; }

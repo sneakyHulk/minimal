@@ -1,4 +1,4 @@
-import "Detection2D.fbs"
+include "Detection2D.fbs";
 
 struct ImageTrackerResult {
     bbox:BoundingBoxXYXY;

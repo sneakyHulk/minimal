@@ -40,9 +40,8 @@ int main(int argc, char** argv) {
 		flatbuffers::FlatBufferBuilder msg;
 
 		if (object_list_subscriber.Receive(msg)) {
-			auto tmp = map.clone();
-
 			auto object_list = GetCompactObjectList(msg.GetBufferPointer());
+			if (!object_list->num_objects()) continue;
 
 			std::vector<std::tuple<int, int, cv::Scalar>> new_points;
 
@@ -65,6 +64,7 @@ int main(int argc, char** argv) {
 			}
 			drawing_fifo.push_back(std::make_pair(object_list->timestamp(), new_points));
 
+			auto tmp = map.clone();
 			for (auto const& e : drawing_fifo | std::ranges::views::values) {
 				for (auto const& [x, y, color] : e) {
 					cv::circle(tmp, cv::Point(x, y), 1, color, 10);
