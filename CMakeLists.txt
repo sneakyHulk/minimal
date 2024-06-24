@@ -8,6 +8,8 @@ get_filename_component(HOME_DIRECTORY ~ ABSOLUTE)
 add_subdirectory(thirdparty/flatbuffers)
 add_subdirectory(thirdparty/argparse)
 add_subdirectory(thirdparty/libOpenDRIVE)
+set_property(TARGET OpenDrive PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 add_subdirectory(thirdparty/cvplot/CvPlot)
 add_subdirectory(thirdparty/json)
 add_subdirectory(thirdparty/ranges-v3)

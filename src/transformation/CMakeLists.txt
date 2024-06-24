@@ -8,10 +8,10 @@ find_package(Boost REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(Eigen3 REQUIRED)
 
-add_library(${PROJECT_NAME} INTERFACE)
-target_include_directories(${PROJECT_NAME} INTERFACE ${CMAKE_SOURCE_DIR}/include/${CURRENT_DIR})
-target_include_directories(${PROJECT_NAME} INTERFACE ${OpenCV_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} INTERFACE
+add_library(${PROJECT_NAME} SHARED Config.cpp LensConfig.cpp)
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/include/${CURRENT_DIR})
+target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} PUBLIC
         common
         ${OpenCV_LIBS}
         ${Boost_LIBRARIES}
@@ -19,8 +19,8 @@ target_link_libraries(${PROJECT_NAME} INTERFACE
         Eigen3::Eigen
         range-v3::range-v3
 )
-target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_23)
-target_compile_definitions(${PROJECT_NAME} INTERFACE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
+target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
 ##### image_to_world ###################################################################################################
 
