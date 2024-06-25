@@ -8,7 +8,7 @@ find_package(Boost REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(Eigen3 REQUIRED)
 
-add_library(${PROJECT_NAME} SHARED Config.cpp LensConfig.cpp)
+add_library(${PROJECT_NAME} SHARED Config.cpp LensConfig.cpp CameraConfig.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/include/${CURRENT_DIR})
 target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PUBLIC

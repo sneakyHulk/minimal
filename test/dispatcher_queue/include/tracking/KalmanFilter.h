@@ -11,7 +11,7 @@
 
 #include "common_output.h"
 
-template <std::size_t dim_x, std::size_t dim_z, std::size_t n_velocity_components = 0, std::array<int, n_velocity_components> i = {}, std::array<int, n_velocity_components> j = {}>
+template <std::size_t dim_x, std::size_t dim_z, std::size_t n_velocity_components = 0, const int i[n_velocity_components] = {}, const int j[n_velocity_components] = {}>
 class KalmanFilter {
    protected:
 	Eigen::Matrix<double, dim_x, 1> x;      // x: This is the Kalman state variable. [dim_x, 1].
@@ -33,15 +33,9 @@ class KalmanFilter {
 	    : x(std::forward<decltype(x)>(x)), F(std::forward<decltype(F)>(F)), H(std::forward<decltype(H)>(H)), P(std::forward<decltype(P)>(P)), R(std::forward<decltype(R)>(R)), Q(std::forward<decltype(Q)>(Q)) {}
 
 	void predict(double dt) {
-#if __cpp_lib_ranges_zip
-		auto indices = std::ranges::views::zip(i, j);
-#else
-		auto indices = ranges::view::zip(i, j);
-#endif
-		for (auto const [ii, jj] : indices) {
-			F(ii, jj) = dt;
+		for (auto k = 0; k < n_velocity_components; ++k) {
+			F(i[k], j[k]) = dt;
 		}
-
 		return predict();
 	}
 	void predict() {

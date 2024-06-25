@@ -8,8 +8,11 @@
 #include "msg/Detection2D.h"
 #include "tracking/KalmanFilter.h"
 
+extern const int i_velocity_components[];
+extern const int j_velocity_components[];
+
 template <std::size_t max_age, std::size_t min_consecutive_hits>
-class KalmanBoxTracker : private KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> {
+class KalmanBoxTracker : private KalmanFilter<7, 4, 3, i_velocity_components, j_velocity_components> {
 	// reuse random generator
 	static unsigned int _id_max;
 
@@ -22,7 +25,7 @@ class KalmanBoxTracker : private KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> {
 	std::vector<BoundingBoxXYXY> _history{};
 
    public:
-	explicit KalmanBoxTracker(BoundingBoxXYXY const& bbox) : KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}>(make_constant_box_velocity_model_kalman_filter(bbox)) {}
+	explicit KalmanBoxTracker(BoundingBoxXYXY const& bbox) : KalmanFilter<7, 4, 3, i_velocity_components, j_velocity_components>(make_constant_box_velocity_model_kalman_filter(bbox)) {}
 
 	[[nodiscard]] static decltype(z) convert_bbox_to_z(BoundingBoxXYXY const& bbox) {
 		decltype(z) z_;
@@ -49,7 +52,7 @@ class KalmanBoxTracker : private KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> {
 
 	BoundingBoxXYXY const& predict(double const dt) {
 		if (dt * x(6) + x(2) <= 0) x(2) *= 0.;  // area must be >= 0;
-		KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}>::predict(dt);
+		KalmanFilter<7, 4, 3, i_velocity_components, j_velocity_components>::predict(dt);
 		if (_consecutive_fails > 0) _consecutive_hits = 0;
 		_consecutive_fails += 1;
 
@@ -61,7 +64,7 @@ class KalmanBoxTracker : private KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> {
 		_consecutive_hits += 1;
 		if (_consecutive_hits >= min_consecutive_hits) _displayed = true;
 
-		KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}>::update(convert_bbox_to_z(bbox));
+		KalmanFilter<7, 4, 3, i_velocity_components, j_velocity_components>::update(convert_bbox_to_z(bbox));
 
 		_history.back() = convert_x_to_bbox(x);
 	}
@@ -75,7 +78,7 @@ class KalmanBoxTracker : private KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> {
 	[[nodiscard]] auto displayed() const { return _displayed; }
 
    private:
-	static KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> make_constant_box_velocity_model_kalman_filter(BoundingBoxXYXY const& bbox) {
+	static KalmanFilter<7, 4, 3, i_velocity_components, j_velocity_components> make_constant_box_velocity_model_kalman_filter(BoundingBoxXYXY const& bbox) {
 		decltype(x) x_;
 		x_ << convert_bbox_to_z(bbox), 0., 0., 0.;
 		decltype(F) F_;

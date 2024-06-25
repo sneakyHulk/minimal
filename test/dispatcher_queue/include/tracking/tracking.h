@@ -9,16 +9,6 @@
 #include "node/node.h"
 #include "transformation/Config.h"
 
-class NoTracking : public InputOutputNode<Detections2D, CompactObjects> {
-	Config const& config;
-
-   public:
-	explicit NoTracking(Config const& config);
-
-   private:
-	CompactObjects function(Detections2D const& data) final;
-};
-
 class SortTracking : public InputOutputNode<Detections2D, ImageTrackerResults> {
 	Config const& config;
 

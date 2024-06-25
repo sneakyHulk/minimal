@@ -1,6 +1,6 @@
 project(test_transformation_dispatcher)
 
-add_library(${PROJECT_NAME} SHARED transformation.cpp)
+add_library(${PROJECT_NAME} SHARED transformation.cpp undistort.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/test/dispatcher_queue/include/${CURRENT_DIR})
 target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PRIVATE

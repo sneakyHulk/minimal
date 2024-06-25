@@ -1,15 +1,27 @@
 #pragma once
 
+#include "msg/CompactObject.h"
 #include "msg/Detection2D.h"
+#include "msg/ImageTrackerResult.h"
 #include "node/node.h"
 #include "transformation/Config.h"
 
-class UndistortDetections : public InputOutputNode<Detections2D, Detections2D> {
+class DetectionTransformation : public InputOutputNode<Detections2D, CompactObjects> {
 	Config const& config;
 
    public:
-	UndistortDetections(Config const& config);
+	explicit DetectionTransformation(Config const& config);
 
    private:
-	Detections2D function(Detections2D const& data) final;
+	CompactObjects function(Detections2D const& data) final;
+};
+
+class ImageTrackingTransformation : public InputOutputNode<ImageTrackerResults, CompactObjects> {
+	Config const& config;
+
+   public:
+	explicit ImageTrackingTransformation(Config const& config);
+
+   private:
+	CompactObjects function(ImageTrackerResults const& data) final;
 };

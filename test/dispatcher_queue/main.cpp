@@ -5,6 +5,7 @@
 #include "tracking/tracking.h"
 #include "transformation/Config.h"
 #include "transformation/transformation.h"
+#include "transformation/undistort.h"
 #include "visualization/visualization.h"
 #include "yolo/yolo.h"
 
@@ -18,6 +19,7 @@ int main() {
 	Yolo yolo;
 	UndistortDetections undistort(config);
 	SortTracking track(config);
+	ImageTrackingTransformation trans(config);
 	Visualization2D vis(config);
 
 	cam_n += yolo;
@@ -29,7 +31,9 @@ int main() {
 
 	undistort += track;
 
-	track += vis;
+	track += trans;
+
+	trans += vis;
 
 	std::thread cam_n_thread(&Camera::operator(), &cam_n);
 	std::thread cam_o_thread(&Camera::operator(), &cam_o);
@@ -37,6 +41,7 @@ int main() {
 	std::thread cam_w_thread(&Camera::operator(), &cam_w);
 	std::thread yolo_thread(&Yolo::operator(), &yolo);
 	std::thread undistort_thread(&UndistortDetections::operator(), &undistort);
-	std::thread track_thread(&NoTracking::operator(), &track);
+	std::thread track_thread(&SortTracking::operator(), &track);
+	std::thread trans_thread(&ImageTrackingTransformation::operator(), &trans);
 	vis();
 }
