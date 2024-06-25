@@ -16,4 +16,5 @@ set_target_properties(${PROJECT_NAME}
         CXX_STANDARD 23
         CXX_EXTENSIONS off
 )
+target_compile_options(${PROJECT_NAME} PUBLIC -std=c++20)
 target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")

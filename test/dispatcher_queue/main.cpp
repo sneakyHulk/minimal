@@ -12,6 +12,10 @@
 int main() {
 	Config config = make_config();
 
+	for (std::vector<double> test = {1, 2, 3}; double e : test) {
+		std::cout << "hi" << std::endl;
+	}
+
 	Camera cam_n("s110_n_cam_8");
 	Camera cam_o("s110_o_cam_8");
 	Camera cam_s("s110_s_cam_8");

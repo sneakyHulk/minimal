@@ -1,7 +1,7 @@
 add_subdirectory(msg)
 add_subdirectory(node)
 add_subdirectory(camera)
-add_subdirectory(yolo)
 add_subdirectory(transformation)
 add_subdirectory(tracking)
 add_subdirectory(visualization)
+add_subdirectory(yolo)
