@@ -2,6 +2,7 @@ project(test_visualization_dispatcher)
 
 find_package(OpenCV REQUIRED)
 
+set(CMAKE_CXX_STANDARD 23)
 add_library(${PROJECT_NAME} SHARED visualization.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/test/dispatcher_queue/include/${CURRENT_DIR})
 target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
@@ -14,9 +15,5 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         autodiff::autodiff
         OpenDrive
 )
-set_target_properties(${PROJECT_NAME}
-        PROPERTIES
-        CXX_STANDARD 23
-        CXX_EXTENSIONS off
-)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")

@@ -1,10 +1,8 @@
 #include "tracking/tracking.h"
 
-#include "tracking/Sort.h"
-
 SortTracking::SortTracking(const Config& config) : config(config) {}
 ImageTrackerResults SortTracking::function(Detections2D const& data) {
-	static thread_local std::map<std::string, Sort<>> trackers;  // will work for now because all Nodes are running on a different thread
+	// static thread_local std::map<std::string, Sort<>> trackers;  // will work for now because all Nodes are running on a different thread
 
 	if (!trackers.contains(data.source)) {
 		trackers.insert({data.source, Sort<>()});
