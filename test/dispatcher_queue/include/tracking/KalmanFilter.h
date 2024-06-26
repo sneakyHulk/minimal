@@ -11,7 +11,7 @@
 
 #include "common_output.h"
 
-template <std::size_t dim_x, std::size_t dim_z, std::size_t n_velocity_components = 0, const int i[n_velocity_components] = {}, const int j[n_velocity_components] = {}>
+template <std::size_t dim_x, std::size_t dim_z, std::size_t n_velocity_components = 0, std::array<int, n_velocity_components> i = {}, std::array<int, n_velocity_components> j = {}>
 class KalmanFilter {
    protected:
 	Eigen::Matrix<double, dim_x, 1> x;      // x: This is the Kalman state variable. [dim_x, 1].

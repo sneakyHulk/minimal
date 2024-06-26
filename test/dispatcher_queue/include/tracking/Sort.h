@@ -13,15 +13,9 @@
 #include <range/v3/view/enumerate.hpp>
 #endif
 
-template <class T>
-struct is_ratio : std::false_type {};
-
-template <std::intmax_t A, std::intmax_t B>
-struct is_ratio<std::ratio<A, B>> : std::true_type {};
-
-template <std::size_t max_age = 4, std::size_t min_consecutive_hits = 3, typename association_threshold = std::ratio<1, 10>, auto association_function = iou>
+template <std::size_t max_age = 4, std::size_t min_consecutive_hits = 3, double association_threshold = 0.1, auto association_function = iou>
 class Sort {
-	static_assert(is_ratio<association_threshold>::value, "association_threshold must be a specialization of ratio");
+	static_assert(association_threshold < 1. && association_threshold > 0.);
 	std::vector<KalmanBoxTracker<max_age, min_consecutive_hits>> trackers{};
 	std::map<unsigned int, std::uint8_t> _cls;
 	std::uint64_t old_timestamp = 0;
@@ -54,7 +48,7 @@ class Sort {
 			}
 		}
 
-		auto const [matches, unmatched_trackers, unmatched_detections] = linear_assignment(association_matrix, 1. - static_cast<double>(association_threshold::num) / static_cast<double>(association_threshold::den));
+		auto const [matches, unmatched_trackers, unmatched_detections] = linear_assignment(association_matrix, 1. - association_threshold);
 
 		// create new tracker from new not matched detections:
 		for (auto const detection_index : unmatched_detections) {
