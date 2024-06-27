@@ -16,3 +16,19 @@ ImageTrackerResults SortTracking::function(Detections2D const& data) {
 
 	return results;
 }
+GlobalTracking::GlobalTracking(Config const& config) : config(config) {}
+GlobalTrackerResults GlobalTracking::function(Detections2D const& data) {
+	if (!image_trackers.contains(data.source)) {
+		image_trackers.insert({data.source, {}});
+	}
+
+	double dt = std::chrono::duration<double>(std::chrono::nanoseconds(data.timestamp) - std::chrono::nanoseconds(old_timestamp)).count();
+
+	for (auto& [source, image_tracker] : image_trackers) {
+		for (auto& e : image_tracker) {
+			e.predict(dt);
+		}
+	}
+
+	return GlobalTrackerResults();
+}

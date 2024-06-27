@@ -9,12 +9,12 @@
 #include "msg/ImageData.h"
 
 
-class Camera : public InputNode<ImageData> {
+class CameraSimulator : public InputNode<ImageData> {
 	std::vector<std::filesystem::directory_entry> files;
 	std::vector<std::filesystem::directory_entry> files_copy;
 
    public:
-	explicit Camera(std::string const& cam_name);
+	explicit CameraSimulator(std::string const& cam_name);
 
    private:
 	ImageData input_function() final;

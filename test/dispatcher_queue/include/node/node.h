@@ -34,6 +34,24 @@ class OutputNode {
 	virtual void output_function(Input const&) = 0;
 };
 
+template <typename Input>
+class OutputPtrNode : public OutputNode<Input> {
+	virtual void output_function(Input const&) final { throw std::logic_error("unreachable code"); }
+
+   public:
+	[[noreturn]] void operator()() override {
+		std::shared_ptr<Input const> item;
+		while (true) {
+			if (OutputNode<Input>::_input_queue.try_pop(item)) {
+				output_function(item);
+			} else {
+				std::this_thread::yield();
+			}
+		}
+	}
+	virtual void output_function(std::shared_ptr<Input const> const&) = 0;
+};
+
 template <typename Output>
 class InputNode {
    protected:

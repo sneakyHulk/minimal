@@ -8,9 +8,8 @@
 #include "msg/Detection2D.h"
 #include "tracking/KalmanFilter.h"
 
-template <std::size_t max_age, std::size_t min_consecutive_hits>
 class KalmanBoxTracker : private KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> {
-	static unsigned int _id_max;
+	static thread_local unsigned int _id_max;
 
 	unsigned int _id = ++_id_max;
 	int _consecutive_hits = 0;
@@ -21,6 +20,8 @@ class KalmanBoxTracker : private KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> {
 	std::vector<BoundingBoxXYXY> _history{};
 
    public:
+	static void reset_id() { _id_max = 0; }
+
 	explicit KalmanBoxTracker(BoundingBoxXYXY const& bbox) : KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}>(make_constant_box_velocity_model_kalman_filter(bbox)) {}
 
 	[[nodiscard]] static decltype(z) convert_bbox_to_z(BoundingBoxXYXY const& bbox) {
@@ -30,7 +31,7 @@ class KalmanBoxTracker : private KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> {
 		auto const h = bbox.bottom - bbox.top;
 
 		auto const x_center = bbox.left + w / 2.;
-		auto const y_center = bbox.top + h / 2.;
+		auto const y_center = bbox.top + h * (3. / 4.);
 
 		auto const s = w * h;
 		auto const r = w / h;
@@ -39,11 +40,11 @@ class KalmanBoxTracker : private KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> {
 		return z_;
 	}
 
-	[[nodiscard]] static constexpr BoundingBoxXYXY convert_x_to_bbox(decltype(x) const& x_) {
+	[[nodiscard]] static BoundingBoxXYXY convert_x_to_bbox(decltype(x) const& x_) {
 		auto const w = std::sqrt(x_(2) * x_(3));
 		auto const h = x_(2) / w;
 
-		return {x_(0) - w / 2., x_(1) - h / 2., x_(0) + w / 2., x_(1) + h / 2.};
+		return {x_(0) - w / 2., x_(1) - h * (3. / 4.), x_(0) + w / 2., x_(1) + h * (1. / 4.)};
 	}
 
 	BoundingBoxXYXY const& predict(double const dt) {
@@ -58,7 +59,6 @@ class KalmanBoxTracker : private KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> {
 	void update(BoundingBoxXYXY const& bbox) {
 		_consecutive_fails = 0;
 		_consecutive_hits += 1;
-		if (_consecutive_hits >= min_consecutive_hits) _displayed = true;
 
 		KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}>::update(convert_bbox_to_z(bbox));
 
@@ -71,7 +71,7 @@ class KalmanBoxTracker : private KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> {
 	[[nodiscard]] auto id() const { return _id; }
 	[[nodiscard]] auto consecutive_hits() const { return _consecutive_hits; }
 	[[nodiscard]] auto consecutive_fails() const { return _consecutive_fails; }
-	[[nodiscard]] auto displayed() const { return _displayed; }
+	[[nodiscard]] auto& displayed() { return _displayed; }
 
    private:
 	static KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> make_constant_box_velocity_model_kalman_filter(BoundingBoxXYXY const& bbox) {
@@ -107,6 +107,3 @@ class KalmanBoxTracker : private KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> {
 		return {std::forward<decltype(x)>(x_), std::forward<decltype(F)>(F_), std::forward<decltype(H)>(H_), std::forward<decltype(P)>(P_), std::forward<decltype(R)>(R_), std::forward<decltype(Q)>(Q_)};
 	}
 };
-
-template <std::size_t max_age, std::size_t min_consecutive_hits>
-unsigned int KalmanBoxTracker<max_age, min_consecutive_hits>::_id_max = 0U;

@@ -34,3 +34,6 @@
 [submodule "thirdparty/ranges-v3"]
 	path = thirdparty/ranges-v3
 	url = https://github.com/ericniebler/range-v3.git
+[submodule "thirdparty/ukf"]
+	path = thirdparty/ukf
+	url = https://github.com/sfwa/ukf.git

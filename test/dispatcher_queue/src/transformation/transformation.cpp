@@ -27,11 +27,8 @@ CompactObjects ImageTrackingTransformation::function(ImageTrackerResults const& 
 	object_list.timestamp = data.timestamp;
 
 	for (auto const& e : data.objects) {
-		double x_image_position = (e.bbox.left + e.bbox.right) / 2.;
-		double y_image_position = e.bbox.top + (e.bbox.bottom - e.bbox.top) * (3. / 4.);
-
 		Eigen::Vector4d const position = config.affine_transformation_map_origin_to_utm() * config.affine_transformation_bases_to_map_origin(config.camera_config(data.source).base_name()) *
-		                                 config.map_image_to_world_coordinate<double>(data.source, x_image_position, y_image_position, 0.);
+		                                 config.map_image_to_world_coordinate<double>(data.source, e.position[0], e.position[1], 0.);
 
 		object_list.objects.emplace_back(0_u8, e.object_class, std::array{position[0], position[1], position[2]}, std::array{0., 0., 0.});
 	}

@@ -3,7 +3,7 @@ project(test_visualization_dispatcher)
 find_package(OpenCV REQUIRED)
 
 set(CMAKE_CXX_STANDARD 23)
-add_library(${PROJECT_NAME} SHARED visualization.cpp)
+add_library(${PROJECT_NAME} SHARED visualization.cpp tracking_visualization.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/test/dispatcher_queue/include/${CURRENT_DIR})
 target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PUBLIC

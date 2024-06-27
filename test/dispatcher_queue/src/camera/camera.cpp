@@ -3,7 +3,7 @@
 #include <chrono>
 using namespace std::chrono_literals;
 
-Camera::Camera(std::string const& cam_name) {
+CameraSimulator::CameraSimulator(std::string const& cam_name) {
 	files = std::vector(std::filesystem::recursive_directory_iterator(std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("data/camera_simulator") / std::filesystem::path(cam_name)), {});
 	files.erase(std::remove_if(files.begin(), files.end(), [](auto const& e) { return e.path().extension() != ".jpg"; }), files.end());
 	files.erase(std::remove_if(files.begin(), files.end(), [](auto const& e) { return e.path().generic_string().find("_distorted") == std::string::npos; }), files.end());
@@ -12,7 +12,7 @@ Camera::Camera(std::string const& cam_name) {
 	common::println("Dealing with ", files.size(), " files!");
 }
 
-ImageData Camera::input_function() {
+ImageData CameraSimulator::input_function() {
 	static std::chrono::time_point<std::chrono::system_clock> images_time;
 	static std::chrono::time_point<std::chrono::system_clock> current_time = std::chrono::system_clock::now();
 	while (files_copy.empty()) {
@@ -37,7 +37,7 @@ ImageData Camera::input_function() {
 
 	std::this_thread::sleep_until(current_time + (next - images_time));
 
-	data.timestamp = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+	data.timestamp = std::chrono::milliseconds(std::stoll(current_file.path().stem())).count();  // std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
 
 	return data;
 }
