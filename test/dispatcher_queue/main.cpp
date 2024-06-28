@@ -25,7 +25,6 @@ int main() {
 	ImageTrackingVisualizationHelper track_vis_helper;
 	ImageTrackingVisualization track_vis(track_vis_helper, "s110_s_cam_8");
 
-
 	cam_n += yolo;
 	cam_o += yolo;
 	cam_s += yolo;

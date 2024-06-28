@@ -15,6 +15,7 @@ class KalmanBoxTracker : private KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> {
 	int _consecutive_hits = 0;
 	int _consecutive_fails = 0;
 	bool _displayed = false;
+	std::uint8_t _object_class = 0;
 
 	// per frame history
 	std::vector<BoundingBoxXYXY> _history{};
@@ -23,6 +24,8 @@ class KalmanBoxTracker : private KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> {
 	static void reset_id() { _id_max = 0; }
 
 	explicit KalmanBoxTracker(BoundingBoxXYXY const& bbox) : KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}>(make_constant_box_velocity_model_kalman_filter(bbox)) {}
+	KalmanBoxTracker(BoundingBoxXYXY const& bbox, std::uint8_t const object_class) : KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}>(make_constant_box_velocity_model_kalman_filter(bbox)), _object_class(object_class) {}
+
 
 	[[nodiscard]] static decltype(z) convert_bbox_to_z(BoundingBoxXYXY const& bbox) {
 		decltype(z) z_;
@@ -72,6 +75,7 @@ class KalmanBoxTracker : private KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> {
 	[[nodiscard]] auto consecutive_hits() const { return _consecutive_hits; }
 	[[nodiscard]] auto consecutive_fails() const { return _consecutive_fails; }
 	[[nodiscard]] auto& displayed() { return _displayed; }
+	[[nodiscard]] auto& object_class() { return _object_class; }
 
    private:
 	static KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> make_constant_box_velocity_model_kalman_filter(BoundingBoxXYXY const& bbox) {
